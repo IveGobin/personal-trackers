@@ -1234,7 +1234,8 @@ function renderTrendChart(){
   const isNarrow = (canvasEl.parentElement.clientWidth || window.innerWidth - 60) < 560;
   const plotWidth = (canvasEl.parentElement.clientWidth || window.innerWidth - 60) - (isNarrow ? 60 : 90) - (target ? 52 : 8);
   const pxPerDay = Math.max(plotWidth, 120) / Math.max(axis.length - 1, 1);
-  const minGapDays = Math.ceil(54 / pxPerDay);
+  // Nagnute oznake (45°) zauzimaju puno manje vodoravnog prostora od ravnih.
+  const minGapDays = Math.ceil((isNarrow ? 26 : 54) / pxPerDay);
   if(dayStep < minGapDays) dayStep = Math.ceil(minGapDays / 7) * 7;
 
   const labels = axis.map((d,i)=>{
@@ -1301,12 +1302,6 @@ function renderTrendChart(){
       responsive:true,
       events:[],
       layout:{ padding:{ right: target ? 52 : 8 } },
-      // Širina se promijeni (rotacija telefona, promjena prozora): ponovno izračunaj razmak oznaka.
-      onResize:()=>{
-        if(!document.getElementById('tab-grafovi').classList.contains('active')) return;
-        clearTimeout(window._trendResizeTimer);
-        window._trendResizeTimer = setTimeout(renderTrendChart, 200);
-      },
       plugins:{
         legend:{ display:false },
         zoneBands:{ bands },
@@ -1315,7 +1310,7 @@ function renderTrendChart(){
       scales:{
         y:{ min:yMin, max:yMax, ticks:{ font:{ family:'IBM Plex Mono', size: isNarrow ? 10 : 12 }, callback:(v)=>isNarrow ? v : v+' kg' }, grid:{ color:'#eae7da' } },
         x:{
-          ticks:{ font:{ family:'IBM Plex Mono', size: isNarrow ? 10 : 12 }, autoSkip:false, maxRotation:0 },
+          ticks:{ font:{ family:'IBM Plex Mono', size: isNarrow ? 10 : 12 }, autoSkip:false, minRotation: isNarrow ? 45 : 0, maxRotation: isNarrow ? 45 : 0 },
           grid:{ color:(ctx)=> (ctx.index===todayIndex || ctx.index%dayStep===0) ? '#e2ded0' : 'rgba(0,0,0,0)', drawTicks:false }
         }
       }
@@ -1346,6 +1341,18 @@ function renderTrendChart(){
   }
   captionEl.textContent = captionText;
 }
+
+// Rotacija telefona / promjena prozora: ponovno izračunaj razmak oznaka na x-osi.
+// Reagira samo na stvarnu promjenu širine (ne na promjenu visine kad iOS skriva traku preglednika).
+let lastViewportWidth = window.innerWidth;
+window.addEventListener('resize', ()=>{
+  if(window.innerWidth === lastViewportWidth) return;
+  lastViewportWidth = window.innerWidth;
+  clearTimeout(window._trendResizeTimer);
+  window._trendResizeTimer = setTimeout(()=>{
+    if(document.getElementById('tab-grafovi').classList.contains('active') && typeof Chart !== 'undefined') renderTrendChart();
+  }, 250);
+});
 
 /* ---------- Graf 2: Dnevna analiza kalorije vs. težina ---------- */
 function renderDailyChart(){
