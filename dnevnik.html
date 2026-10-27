@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dnevnik · Zapisnik aktivnosti</title>
+<style>
+  :root{
+    --bg: #14171b;
+    --surface: #1c2027;
+    --surface-2: #232833;
+    --border: #2b313c;
+    --text: #e8e6e1;
+    --text-muted: #8b93a3;
+    --text-faint: #565f6d;
+    --amber: #e3a548;
+    --blue: #6b9bd8;
+    --teal: #45a89e;
+    --rose: #d9707a;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --sans: ui-sans-serif, "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+  ::selection{background:var(--amber); color:#14171b;}
+
+  header{
+    padding:28px 32px 20px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .brand{display:flex; align-items:baseline; gap:14px;}
+  .brand .mark{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:2px;
+    color:var(--amber);
+    border:1px solid var(--amber);
+    padding:3px 7px;
+    border-radius:3px;
+  }
+  h1{font-size:20px; margin:0; font-weight:600; letter-spacing:0.3px;}
+  .stats{font-family:var(--mono); font-size:12px; color:var(--text-muted); display:flex; gap:16px;}
+  .stats b{color:var(--text);}
+
+  .layout{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:0;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    padding:28px 32px;
+  }
+  .panel.form{
+    border-right:1px solid var(--border);
+    position:sticky;
+    top:0;
+  }
+  @media (max-width:860px){
+    .panel.form{position:static; border-right:none; border-bottom:1px solid var(--border);}
+  }
+
+  label.field-label{
+    display:block;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin:18px 0 8px;
+  }
+  label.field-label:first-child{margin-top:0;}
+
+  textarea{
+    width:100%;
+    min-height:110px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:6px;
+    color:var(--text);
+    padding:12px 14px;
+    font-family:var(--sans);
+    font-size:14.5px;
+    line-height:1.5;
+    resize:vertical;
+  }
+  textarea:focus, select:focus, input:focus{
+    outline:2px solid var(--blue);
+    outline-offset:1px;
+  }
+
+  .choice-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .choice{
+    position:relative;
+  }
+  .choice input{position:absolute; opacity:0; pointer-events:none;}
+  .choice label{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:7px 12px;
+    border:1px solid var(--border);
+    border-radius:20px;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--text-muted);
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .choice input:checked + label{
+    color:var(--bg);
+    border-color:transparent;
+  }
+  .choice[data-type="aktivnost"] input:checked + label{background:var(--blue);}
+  .choice[data-type="zapazanje"] input:checked + label{background:var(--teal);}
+  .choice[data-type="dogadjaj"] input:checked + label{background:var(--rose);}
+  .choice[data-imp="1"] input:checked + label,
+  .choice[data-imp="2"] input:checked + label,
+  .choice[data-imp="3"] input:checked + label{background:var(--amber);}
+
+  select, input[type="text"]{
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:6px;
+    color:var(--text);
+    padding:9px 12px;
+    font-family:var(--sans);
+    font-size:14px;
+  }
+
+  .btn{
+    font-family:var(--sans);
+    font-size:13.5px;
+    font-weight:600;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    padding:10px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:background .15s, border-color .15s;
+  }
+  .btn:hover{background:var(--surface-2);}
+  .btn.primary{
+    background:var(--amber);
+    color:#14171b;
+    border-color:var(--amber);
+  }
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent;}
+  .btn.small{padding:6px 10px; font-size:12px;}
+  .btn.danger:hover{border-color:var(--rose); color:var(--rose);}
+
+  .actions-row{display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;}
+
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:20px;
+  }
+  .toolbar input[type="text"]{max-width:240px;}
+  .toolbar select{width:auto; max-width:160px;}
+  .toolbar .spacer{flex:1;}
+
+  .entries{display:flex; flex-direction:column; gap:12px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px 18px;
+    position:relative;
+    display:flex;
+    gap:16px;
+  }
+  .card .stamp{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-faint);
+    white-space:nowrap;
+    padding-top:2px;
+    min-width:118px;
+  }
+  .card .stamp .idx{color:var(--text-muted);}
+  .card .body{flex:1; min-width:0;}
+  .card .text{font-size:14.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word;}
+  .card .meta{display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;}
+  .tag{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:0.4px;
+    padding:3px 8px;
+    border-radius:4px;
+    text-transform:uppercase;
+  }
+  .tag.type-aktivnost{background:rgba(107,155,216,.15); color:var(--blue);}
+  .tag.type-zapazanje{background:rgba(69,168,158,.15); color:var(--teal);}
+  .tag.type-dogadjaj{background:rgba(217,112,122,.15); color:var(--rose);}
+  .tag.cat{background:var(--surface-2); color:var(--text-muted);}
+  .imp-dots{display:inline-flex; gap:3px;}
+  .imp-dots span{width:7px; height:7px; border-radius:1px; background:var(--border); display:inline-block;}
+  .imp-dots span.on{background:var(--amber);}
+  .card .row-actions{position:absolute; top:12px; right:14px; display:flex; gap:6px; opacity:0; transition:opacity .12s;}
+  .card:hover .row-actions{opacity:1;}
+  .icon-btn{
+    background:none; border:none; cursor:pointer;
+    color:var(--text-faint); font-size:13px; padding:2px 5px;
+  }
+  .icon-btn:hover{color:var(--text);}
+
+  .empty{
+    color:var(--text-faint);
+    font-size:14px;
+    padding:40px 0;
+    text-align:center;
+    border:1px dashed var(--border);
+    border-radius:8px;
+  }
+
+  footer{
+    padding:16px 32px 30px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-faint);
+  }
+
+  input[type="file"]{display:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="mark">LOG</span>
+    <h1>Dnevnik aktivnosti</h1>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="layout">
+  <div class="panel form">
+    <label class="field-label">Zapis</label>
+    <textarea id="text-input" placeholder="Što se dogodilo, na što misliš, što si primijetio..."></textarea>
+
+    <label class="field-label">Tip unosa</label>
+    <div class="choice-row" id="type-choices">
+      <div class="choice" data-type="aktivnost">
+        <input type="radio" name="type" id="type-aktivnost" value="aktivnost" checked>
+        <label for="type-aktivnost">Aktivnost</label>
+      </div>
+      <div class="choice" data-type="zapazanje">
+        <input type="radio" name="type" id="type-zapazanje" value="zapazanje">
+        <label for="type-zapazanje">Zapažanje</label>
+      </div>
+      <div class="choice" data-type="dogadjaj">
+        <input type="radio" name="type" id="type-dogadjaj" value="dogadjaj">
+        <label for="type-dogadjaj">Događaj</label>
+      </div>
+    </div>
+
+    <label class="field-label">Važnost</label>
+    <div class="choice-row" id="imp-choices">
+      <div class="choice" data-imp="1">
+        <input type="radio" name="imp" id="imp-1" value="1">
+        <label for="imp-1">▪ Niska</label>
+      </div>
+      <div class="choice" data-imp="2">
+        <input type="radio" name="imp" id="imp-2" value="2" checked>
+        <label for="imp-2">▪▪ Srednja</label>
+      </div>
+      <div class="choice" data-imp="3">
+        <input type="radio" name="imp" id="imp-3" value="3">
+        <label for="imp-3">▪▪▪ Visoka</label>
+      </div>
+    </div>
+
+    <label class="field-label">Kategorija</label>
+    <select id="category-select">
+      <option value="posao">Posao</option>
+      <option value="osobno" selected>Osobno</option>
+      <option value="zdravlje">Zdravlje</option>
+      <option value="obitelj">Obitelj</option>
+      <option value="ucenje">Učenje</option>
+      <option value="financije">Financije</option>
+      <option value="ostalo">Ostalo</option>
+      <option value="__custom">+ Nova kategorija...</option>
+    </select>
+    <input type="text" id="category-custom" placeholder="Naziv nove kategorije" style="display:none; margin-top:8px;">
+
+    <label class="field-label">Oznake (opcionalno, odvojene zarezom)</label>
+    <input type="text" id="tags-input" placeholder="npr. sastanak, trčanje, obitelj">
+
+    <div class="actions-row">
+      <button class="btn primary" id="save-btn">Spremi unos</button>
+    </div>
+
+    <div class="actions-row" style="margin-top:28px; border-top:1px solid var(--border); padding-top:20px;">
+      <button class="btn" id="export-btn">⭳ Izvezi JSON</button>
+      <button class="btn ghost" id="import-btn">⭱ Uvezi JSON</button>
+      <input type="file" id="import-file" accept="application/json">
+    </div>
+    <div class="actions-row">
+      <button class="btn ghost danger" id="clear-btn">Obriši sve unose</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="Pretraži tekst i oznake...">
+      <select id="filter-type">
+        <option value="">Svi tipovi</option>
+        <option value="aktivnost">Aktivnost</option>
+        <option value="zapazanje">Zapažanje</option>
+        <option value="dogadjaj">Događaj</option>
+      </select>
+      <select id="filter-category">
+        <option value="">Sve kategorije</option>
+      </select>
+      <select id="filter-imp">
+        <option value="">Sva važnost</option>
+        <option value="3">Visoka</option>
+        <option value="2">Srednja</option>
+        <option value="1">Niska</option>
+      </select>
+      <div class="spacer"></div>
+      <select id="sort-order">
+        <option value="desc">Najnovije prvo</option>
+        <option value="asc">Najstarije prvo</option>
+      </select>
+    </div>
+
+    <div class="entries" id="entries-list"></div>
+  </div>
+</div>
+
+<footer>Podaci se spremaju lokalno u tvom pregledniku (localStorage). Ništa se ne šalje na internet. Redovito izvozi JSON kao backup.</footer>
+
+<script>
+const STORAGE_KEY = 'dnevnik_entries_v1';
+
+let entries = loadEntries();
+
+function loadEntries(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){
+    console.error('Greška pri čitanju localStorage:', e);
+    return [];
+  }
+}
+
+function persist(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }catch(e){
+    alert('Spremanje nije uspjelo. Provjeri je li localStorage dostupan u ovom prozoru.');
+  }
+}
+
+function uid(){
+  return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+}
+
+function fmtStamp(iso){
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}\n${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const typeLabels = { aktivnost:'Aktivnost', zapazanje:'Zapažanje', dogadjaj:'Događaj' };
+
+const categorySelect = document.getElementById('category-select');
+const categoryCustom = document.getElementById('category-custom');
+categorySelect.addEventListener('change', () => {
+  categoryCustom.style.display = categorySelect.value === '__custom' ? 'block' : 'none';
+});
+
+function getSelectedCategory(){
+  if(categorySelect.value === '__custom'){
+    return (categoryCustom.value.trim() || 'ostalo').toLowerCase();
+  }
+  return categorySelect.value;
+}
+
+function refreshCategoryFilterOptions(){
+  const filterCat = document.getElementById('filter-category');
+  const current = filterCat.value;
+  const cats = Array.from(new Set(entries.map(e => e.category))).sort();
+  filterCat.innerHTML = '<option value="">Sve kategorije</option>' +
+    cats.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('');
+  if(cats.includes(current)) filterCat.value = current;
+}
+
+function escapeHtml(s){
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+function escapeAttr(s){
+  return String(s).replace(/"/g,'&quot;');
+}
+
+document.getElementById('save-btn').addEventListener('click', () => {
+  const text = document.getElementById('text-input').value.trim();
+  if(!text){
+    document.getElementById('text-input').focus();
+    return;
+  }
+  const type = document.querySelector('input[name="type"]:checked').value;
+  const importance = parseInt(document.querySelector('input[name="imp"]:checked').value, 10);
+  const category = getSelectedCategory();
+  const tagsRaw = document.getElementById('tags-input').value.trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  entries.push({
+    id: uid(),
+    ts: new Date().toISOString(),
+    text, type, importance, category, tags
+  });
+
+  persist();
+  document.getElementById('text-input').value = '';
+  document.getElementById('tags-input').value = '';
+  refreshCategoryFilterOptions();
+  render();
+});
+
+document.getElementById('entries-list').addEventListener('click', (e) => {
+  const delBtn = e.target.closest('[data-del]');
+  if(delBtn){
+    const id = delBtn.getAttribute('data-del');
+    if(confirm('Obrisati ovaj unos?')){
+      entries = entries.filter(en => en.id !== id);
+      persist();
+      refreshCategoryFilterOptions();
+      render();
+    }
+  }
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  if(entries.length === 0) return;
+  if(confirm('Ovo će trajno obrisati sve unose iz preglednika. Jesi li siguran? (Preporučeno: prvo izvezi JSON.)')){
+    entries = [];
+    persist();
+    refreshCategoryFilterOptions();
+    render();
+  }
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const sorted = [...entries].sort((a,b) => new Date(a.ts) - new Date(b.ts));
+  const blob = new Blob([JSON.stringify(sorted, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const stamp = now.toISOString().slice(0,10);
+  a.href = url;
+  a.download = `dnevnik-export-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-btn').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data)) throw new Error('Datoteka ne sadrži niz unosa.');
+      const existingIds = new Set(entries.map(en => en.id));
+      let added = 0;
+      data.forEach(en => {
+        if(en && en.text && !existingIds.has(en.id)){
+          entries.push({
+            id: en.id || uid(),
+            ts: en.ts || new Date().toISOString(),
+            text: en.text,
+            type: en.type || 'aktivnost',
+            importance: en.importance || 2,
+            category: en.category || 'ostalo',
+            tags: Array.isArray(en.tags) ? en.tags : []
+          });
+          added++;
+        }
+      });
+      persist();
+      refreshCategoryFilterOptions();
+      render();
+      alert(`Uvezeno ${added} novih unosa.`);
+    }catch(err){
+      alert('Greška pri uvozu: datoteka nije valjan JSON izvoz ovog dnevnika.');
+    }
+    document.getElementById('import-file').value = '';
+  };
+  reader.readAsText(file);
+});
+
+['search-input','filter-type','filter-category','filter-imp','sort-order'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+  document.getElementById(id).addEventListener('change', render);
+});
+
+function render(){
+  const search = document.getElementById('search-input').value.trim().toLowerCase();
+  const fType = document.getElementById('filter-type').value;
+  const fCat = document.getElementById('filter-category').value;
+  const fImp = document.getElementById('filter-imp').value;
+  const order = document.getElementById('sort-order').value;
+
+  let list = entries.filter(en => {
+    if(fType && en.type !== fType) return false;
+    if(fCat && en.category !== fCat) return false;
+    if(fImp && String(en.importance) !== fImp) return false;
+    if(search){
+      const hay = (en.text + ' ' + (en.tags||[]).join(' ') + ' ' + en.category).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  list.sort((a,b) => order === 'asc'
+    ? new Date(a.ts) - new Date(b.ts)
+    : new Date(b.ts) - new Date(a.ts));
+
+  const container = document.getElementById('entries-list');
+  if(list.length === 0){
+    container.innerHTML = `<div class="empty">${entries.length === 0 ? 'Još nema unosa. Dodaj prvi zapis lijevo.' : 'Nema unosa koji odgovaraju filtrima.'}</div>`;
+  }else{
+    container.innerHTML = list.map((en, i) => {
+      const impDots = [1,2,3].map(n => `<span class="${n <= en.importance ? 'on' : ''}"></span>`).join('');
+      const tagsHtml = (en.tags||[]).map(t => `<span class="tag cat">#${escapeHtml(t)}</span>`).join('');
+      return `
+        <div class="card">
+          <div class="stamp">${fmtStamp(en.ts).replace('\n','<br>')}</div>
+          <div class="body">
+            <div class="text">${escapeHtml(en.text)}</div>
+            <div class="meta">
+              <span class="tag type-${en.type}">${typeLabels[en.type] || en.type}</span>
+              <span class="tag cat">${escapeHtml(en.category)}</span>
+              <span class="imp-dots">${impDots}</span>
+              ${tagsHtml}
+            </div>
+          </div>
+          <div class="row-actions">
+            <button class="icon-btn" title="Obriši" data-del="${en.id}">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  const byType = entries.reduce((acc,en) => (acc[en.type]=(acc[en.type]||0)+1, acc), {});
+  document.getElementById('stats').innerHTML = `
+    <span><b>${entries.length}</b> ukupno</span>
+    <span><b>${byType.aktivnost||0}</b> aktivnosti</span>
+    <span><b>${byType.zapazanje||0}</b> zapažanja</span>
+    <span><b>${byType.dogadjaj||0}</b> događaji</span>
+  `;
+}
+
+refreshCategoryFilterOptions();
+render();
+</script>
+</body>
+</html>

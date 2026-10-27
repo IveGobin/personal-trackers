@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dnevnik · prehrana i težina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#EEF0E6;
+    --card:#FBFBF6;
+    --ink:#22251d;
+    --ink-soft:#5c6152;
+    --line:#d7dac6;
+    --line-strong:#b9bea3;
+    --moss:#4f6b47;
+    --moss-deep:#3a4f35;
+    --toast:#96622f;
+    --brick:#a83f30;
+    --paper-inv:#f6f4ec;
+    --shadow: 0 1px 0 rgba(34,37,29,0.06), 0 8px 20px -12px rgba(34,37,29,0.25);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(79,107,71,0.07), transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:28px 18px 60px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  header.top{margin-bottom:22px;}
+  header.top .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--moss-deep);margin-bottom:6px;
+  }
+  header.top h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(28px,4vw,38px);
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  header.top p{margin:0;color:var(--ink-soft);font-size:14.5px;max-width:56ch;}
+
+  /* Tab nav styled like folder tabs */
+  nav.tabs{display:flex;gap:6px;margin:26px 0 0;position:relative;z-index:2;}
+  nav.tabs button{
+    font-family:'Fraunces',serif;
+    font-size:15px;font-weight:600;
+    background:var(--card);
+    border:1px solid var(--line-strong);
+    border-bottom:none;
+    color:var(--ink-soft);
+    padding:10px 18px 12px;
+    border-radius:10px 10px 0 0;
+    cursor:pointer;
+    transform:translateY(3px);
+    transition:transform .15s ease, color .15s ease;
+  }
+  nav.tabs button.active{
+    color:var(--ink);
+    background:var(--card);
+    transform:translateY(0);
+    box-shadow:var(--shadow);
+  }
+  main.sheet{
+    background:var(--card);
+    border:1px solid var(--line-strong);
+    border-radius:0 12px 12px 12px;
+    box-shadow:var(--shadow);
+    padding:26px;
+    position:relative;
+    z-index:1;
+  }
+  section.tabpanel{display:none;}
+  section.tabpanel.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  h2.section-title{
+    font-family:'Fraunces',serif;font-weight:600;font-size:19px;
+    margin:0 0 4px;
+  }
+  p.section-hint{margin:0 0 18px;color:var(--ink-soft);font-size:13.5px;}
+
+  .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}
+  @media(max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  /* Stat / summary cards */
+  .kcal-ring-section{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:24px;padding:22px 16px 20px;background:var(--paper-inv);border:1px solid var(--line);border-radius:14px;}
+  .kcal-ring-wrap{position:relative;width:172px;height:172px;}
+  .kcal-ring-wrap svg{width:100%;height:100%;display:block;}
+  .kcal-ring-wrap .track{fill:none;stroke:#e4e1d2;stroke-width:14;}
+  .kcal-ring-wrap .progress{fill:none;stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset .5s ease, stroke .3s ease;}
+  .kcal-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 12px;}
+  .kcal-ring-center .big{font-family:'Fraunces',serif;font-weight:700;font-size:32px;line-height:1;color:var(--ink);}
+  .kcal-ring-center .sub{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .kcal-ring-center .pct{font-family:'Inter',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;margin-top:7px;color:var(--moss-deep);}
+  .kcal-ring-center .pct.over{color:var(--brick);}
+  .kcal-ring-arrow{position:absolute;top:2px;right:14px;font-size:17px;color:var(--brick);}
+  .kcal-ring-caption{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);text-align:center;}
+  .kcal-ring-empty{color:var(--ink-soft);font-size:13.5px;text-align:center;padding:10px 0;}
+
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
+  .stat-card{
+    flex:1 1 140px;
+    background:var(--paper-inv);
+    border:1px dashed var(--line-strong);
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
+  .stat-card .value{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;margin-top:4px;}
+  .stat-card .value.moss{color:var(--moss-deep);}
+  .stat-card .value.toast{color:var(--toast);}
+  .stat-card .value.brick{color:var(--brick);}
+
+  /* Forms */
+  fieldset.form-card{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 16px 18px;
+    margin:0 0 16px;
+    min-width:0;
+  }
+  fieldset.form-card legend{
+    font-family:'Fraunces',serif;font-weight:600;font-size:14.5px;
+    padding:0 8px;color:var(--moss-deep);
+  }
+  .preset-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+  .preset-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--paper-inv);border:1px solid var(--line-strong);
+    border-radius:20px;padding:5px 6px 5px 12px;
+    font-size:12px;color:var(--ink-soft);
+  }
+  .preset-chip button{
+    background:none;border:none;cursor:pointer;color:var(--ink-soft);
+    font-size:12px;line-height:1;padding:2px 6px;border-radius:50%;
+  }
+  .preset-chip button:hover{color:var(--brick);background:rgba(168,63,48,.08);}
+  .field-row{display:flex;gap:10px;flex-wrap:wrap;align-items:end;}
+  .field{display:flex;flex-direction:column;gap:5px;flex:1 1 120px;min-width:0;}
+  .field label{font-size:11.5px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+  select, input[type=number], input[type=date], input[type=text]{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--line-strong);
+    background:#fff;
+    color:var(--ink);
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+  select:focus, input:focus{outline:2px solid var(--moss);outline-offset:1px;}
+  .btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
+    border:none;border-radius:8px;
+    padding:10px 16px;
+    cursor:pointer;
+    background:var(--moss);color:#fff;
+    transition:background .15s ease, transform .1s ease;
+    display:inline-block;
+  }
+  .btn:hover{background:var(--moss-deep);}
+  .btn:active{transform:scale(.98);}
+  .btn.toast-btn{background:var(--toast);}
+  .btn.toast-btn:hover{background:#7a4f26;}
+  .btn.brick-btn{background:var(--brick);}
+  .btn.brick-btn:hover{background:#832f23;}
+  .btn.ghost{background:transparent;border:1px solid var(--line-strong);color:var(--ink);}
+  .btn.ghost:hover{background:var(--paper);}
+  button.icon-btn{
+    background:none;border:none;cursor:pointer;color:var(--ink-soft);
+    font-size:14px;padding:2px 6px;border-radius:6px;
+  }
+  button.icon-btn:hover{color:var(--brick);background:rgba(168,63,48,.08);}
+
+  /* Calendar */
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-header h3{font-family:'Fraunces',serif;font-size:18px;margin:0;font-weight:600;}
+  .cal-nav{display:flex;gap:8px;}
+  .cal-nav button{
+    background:var(--paper-inv);border:1px solid var(--line-strong);
+    border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:15px;
+  }
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-dow{font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:center;color:var(--ink-soft);padding-bottom:4px;}
+  .cal-day{
+    position:relative;
+    aspect-ratio:1/0.85;
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:var(--paper-inv);
+    cursor:pointer;
+    padding:6px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:border-color .12s ease, transform .1s ease;
+  }
+  .cal-day:hover{border-color:var(--moss);transform:translateY(-1px);}
+  .cal-day.empty{background:transparent;border:none;cursor:default;}
+  .cal-day.empty:hover{transform:none;}
+  .cal-day.today{border-color:var(--moss);box-shadow:0 0 0 2px rgba(79,107,71,.15) inset;}
+  .cal-day.selected{background:var(--moss);border-color:var(--moss-deep);}
+  .cal-day.selected .num, .cal-day.selected .mini{color:#fff;}
+  .cal-day .num{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;}
+  .cal-day .mini{font-size:10px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
+  .cal-day .dot{width:5px;height:5px;border-radius:50%;position:absolute;top:7px;right:7px;background:var(--toast);}
+  .cal-day .warn-badge{
+    position:absolute;top:5px;left:5px;width:16px;height:16px;
+    border-radius:50%;background:#fff;border:1.5px solid var(--brick);
+    color:var(--brick);font-size:10px;font-weight:800;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .cal-day.over-hot .num{color:#fff;}
+  .cal-day.over-hot .mini{color:rgba(255,255,255,0.9);}
+  .cal-legend{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--ink-soft);}
+  .cal-legend .swatch{display:inline-block;width:34px;height:14px;border-radius:4px;background:linear-gradient(90deg, rgba(246,244,236,1), #a83f30);border:1px solid var(--line-strong);}
+
+  /* Receipt-style detail panel */
+  .receipt{
+    margin-top:20px;
+    background:var(--paper-inv);
+    border-radius:4px;
+    padding:18px 20px;
+    position:relative;
+    border-top:2px dashed var(--line-strong);
+    border-bottom:2px dashed var(--line-strong);
+  }
+  .receipt h4{
+    font-family:'Fraunces',serif;font-size:16px;margin:0 0 10px;
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .receipt .rline{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;
+    padding:5px 0;border-bottom:1px dotted var(--line-strong);
+    gap:8px;
+  }
+  .receipt .rline .tag{color:var(--ink-soft);font-family:'Inter',sans-serif;font-size:12px;}
+  .receipt .rline.total{border-bottom:none;border-top:1px solid var(--ink);margin-top:6px;padding-top:8px;font-weight:600;}
+  .receipt .empty-note{color:var(--ink-soft);font-size:13px;font-style:italic;}
+
+  /* Charts */
+  .chart-box{background:var(--paper-inv);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:20px;}
+  .chart-box h3{font-family:'Fraunces',serif;font-size:15px;margin:0 0 12px;font-weight:600;}
+  .chart-box-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+  .chart-box-header h3{margin:0;}
+  .chart-controls{display:flex;gap:2px;background:#fff;border:1px solid var(--line-strong);border-radius:20px;padding:3px;}
+  .chart-controls button{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;
+    background:transparent;border:none;
+    padding:6px 13px;border-radius:16px;cursor:pointer;color:var(--ink-soft);
+  }
+  .chart-controls button.active{background:var(--ink);color:#fff;}
+  canvas{max-height:280px;}
+
+  /* Export */
+  .export-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+  .danger-zone{
+    margin-top:26px;padding:16px;border:1px dashed var(--brick);border-radius:10px;
+    background:rgba(168,63,48,0.05);
+  }
+  .danger-zone h3{font-family:'Fraunces',serif;font-size:14.5px;color:var(--brick);margin:0 0 8px;}
+  .settings-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;padding:14px;background:var(--paper-inv);border-radius:10px;border:1px solid var(--line);}
+
+  /* Staklenka */
+  .jar-wrap{background:var(--paper-inv);border:1px solid var(--line);border-radius:12px;padding:10px 10px 4px;margin-bottom:18px;}
+  .jar-wrap svg{display:block;width:100%;max-width:560px;margin:0 auto;}
+  .jar-msg{background:var(--paper-inv);border:1px dashed var(--line-strong);border-radius:10px;padding:16px;color:var(--ink-soft);font-size:13.5px;}
+  .jar-status{margin:0 0 16px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--moss-deep);text-align:center;}
+  .jar-blocks{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0 6px;}
+  .jar-blocks-cap{font-size:12px;color:var(--ink-soft);margin:0 0 14px;}
+  .jar-note{font-size:12.5px;color:var(--ink-soft);margin:6px 0 0;}
+
+  .toast-msg{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper-inv);
+    padding:10px 18px;border-radius:20px;font-size:13.5px;
+    font-family:'Inter',sans-serif;box-shadow:var(--shadow);
+    opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;
+    z-index:50;
+  }
+  .toast-msg.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Osobni dnevnik · lokalno, bez interneta</div>
+    <h1>Prehrana &amp; težina</h1>
+    <p>Unesi obroke, aktivnosti i težinu. Pregledaj povijest po danima u kalendaru i prati kretanje kroz grafove. Svi podaci ostaju samo u ovom pregledniku.</p>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="unos" class="active">Unos</button>
+    <button data-tab="kalendar">Kalendar</button>
+    <button data-tab="grafovi">Grafovi</button>
+    <button data-tab="staklenka">Vizualizacija</button>
+    <button data-tab="kalkulator">Kalkulator</button>
+    <button data-tab="izvoz">Izvoz</button>
+  </nav>
+
+  <main class="sheet">
+
+    <!-- ===================== UNOS ===================== -->
+    <section class="tabpanel active" id="tab-unos">
+      <h2 class="section-title">Današnji dan</h2>
+      <p class="section-hint">Brzi pregled i unos za danas.</p>
+
+      <div class="kcal-ring-section" id="kcalRingSection"></div>
+
+      <div class="stat-row" id="today-stats"></div>
+
+      <div class="settings-row">
+        <div class="field">
+          <label for="setGoal">Cilj kalorija / dan</label>
+          <input type="number" id="setGoal" min="0" step="10" placeholder="npr. 2000">
+        </div>
+        <div class="field">
+          <label for="setHeight">Visina (cm, za BMI)</label>
+          <input type="number" id="setHeight" min="0" step="1" placeholder="npr. 175">
+        </div>
+        <div class="field">
+          <label for="setTargetWeight">Ciljana težina (kg)</label>
+          <input type="number" id="setTargetWeight" min="0" step="0.1" placeholder="npr. 78">
+        </div>
+        <div class="field">
+          <label for="setTargetDate">Ciljani datum</label>
+          <input type="date" id="setTargetDate">
+        </div>
+        <div class="field" style="flex:1 1 220px;">
+          <label style="display:flex;align-items:center;gap:7px;text-transform:none;font-weight:500;font-size:12.5px;cursor:pointer;">
+            <input type="checkbox" id="setCreditExercise" style="width:15px;height:15px;">
+            Uračunaj potrošene kalorije u dnevni cilj
+          </label>
+        </div>
+        <div class="field" style="justify-content:flex-end;">
+          <button class="btn ghost" id="saveSettings">Spremi postavke</button>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <fieldset class="form-card">
+          <legend>Obrok</legend>
+          <div class="field-row">
+            <div class="field" style="flex:1 1 100%;">
+              <label for="mealPreset">Brzi odabir (spremljeni obrok)</label>
+              <select id="mealPreset">
+                <option value="">— odaberi spremljeni obrok —</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:10px;">
+            <div class="field">
+              <label for="mealType">Vrsta</label>
+              <select id="mealType">
+                <option value="dorucak">Doručak</option>
+                <option value="rucak">Ručak</option>
+                <option value="vecera">Večera</option>
+                <option value="medjuobrok">Međuobrok</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="mealKcal">Kalorije</label>
+              <input type="number" id="mealKcal" min="0" step="1" placeholder="kcal">
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:10px;">
+            <div class="field">
+              <label for="mealDate">Datum</label>
+              <input type="date" id="mealDate">
+            </div>
+            <div class="field">
+              <label for="mealNote">Napomena (opcionalno)</label>
+              <input type="text" id="mealNote" placeholder="npr. tjestenina">
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn" id="addMeal">Dodaj obrok</button>
+            <button class="btn ghost" id="savePreset" type="button">☆ Spremi kao predložak</button>
+          </div>
+          <div id="presetList" class="preset-list"></div>
+        </fieldset>
+
+        <fieldset class="form-card">
+          <legend>Fizička aktivnost</legend>
+          <div class="field-row">
+            <div class="field">
+              <label for="actName">Aktivnost</label>
+              <input type="text" id="actName" placeholder="npr. trčanje">
+            </div>
+            <div class="field">
+              <label for="actKcal">Potrošeno kcal</label>
+              <input type="number" id="actKcal" min="0" step="1" placeholder="kcal">
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:10px;">
+            <div class="field">
+              <label for="actDate">Datum</label>
+              <input type="date" id="actDate">
+            </div>
+          </div>
+          <div style="margin-top:12px;"><button class="btn toast-btn" id="addAct">Dodaj aktivnost</button></div>
+        </fieldset>
+
+        <fieldset class="form-card">
+          <legend>Težina</legend>
+          <div class="field-row">
+            <div class="field">
+              <label for="weightKg">Kilogrami</label>
+              <input type="number" id="weightKg" min="0" step="0.1" placeholder="npr. 78.4">
+            </div>
+            <div class="field">
+              <label for="weightDate">Datum</label>
+              <input type="date" id="weightDate">
+            </div>
+          </div>
+          <div style="margin-top:12px;"><button class="btn brick-btn" id="addWeight">Spremi težinu</button></div>
+        </fieldset>
+      </div>
+    </section>
+
+    <!-- ===================== KALENDAR ===================== -->
+    <section class="tabpanel" id="tab-kalendar">
+      <h2 class="section-title">Povijest po danima</h2>
+      <p class="section-hint">Klikni na bilo koji dan u mjesecu da vidiš što je taj dan uneseno.</p>
+
+      <div class="cal-header">
+        <div class="cal-nav"><button id="calPrev">‹</button></div>
+        <h3 id="calLabel">—</h3>
+        <div class="cal-nav"><button id="calNext">›</button></div>
+      </div>
+      <div class="cal-grid" id="calDow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:6px;"></div>
+      <div class="cal-legend"><span class="swatch"></span><span>pozadina dana postaje crvenkasta kad se premaši dnevni cilj kalorija (tamnije = veće premašenje); ⚠ oznaka u kutu to dodatno naglašava</span></div>
+
+      <div class="receipt" id="dayReceipt" style="display:none;"></div>
+    </section>
+
+    <!-- ===================== GRAFOVI ===================== -->
+    <section class="tabpanel" id="tab-grafovi">
+      <h2 class="section-title">Kretanje kroz vrijeme</h2>
+      <p class="section-hint">Trend težine s zonama i ciljem, te dnevna analiza kalorija i težine zajedno.</p>
+
+      <div class="chart-box">
+        <h3>Trend napretka i cilj</h3>
+        <p id="trendMsg" style="display:none;color:var(--ink-soft);font-size:13px;margin:0 0 6px;"></p>
+        <canvas id="trendChart"></canvas>
+        <p id="trendCaption" style="margin:12px 0 0;font-size:13px;color:var(--ink-soft);text-align:center;"></p>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-box-header">
+          <h3>Dnevna analiza: kalorije vs. težina</h3>
+          <div class="chart-controls" id="rangeButtons">
+            <button data-range="7">7 d</button>
+            <button data-range="30" class="active">30 d</button>
+            <button data-range="90">3 mj</button>
+            <button data-range="all">Sve</button>
+          </div>
+        </div>
+        <canvas id="dailyChart"></canvas>
+      </div>
+    </section>
+
+    <!-- ===================== STAKLENKA ===================== -->
+    <section class="tabpanel" id="tab-staklenka">
+      <h2 class="section-title">Višak do cilja</h2>
+      <p class="section-hint">Višak iznad ciljne težine prikazan kao volumen. Posuda je puna na početnoj težini (tvoj prvi unos), a prazna kad dosegneš cilj.</p>
+
+      <div class="jar-msg" id="jarMsg" style="display:none;"></div>
+
+      <div id="jarBody">
+        <div class="jar-wrap">
+          <svg viewBox="0 0 680 350" role="img" xmlns="http://www.w3.org/2000/svg">
+            <title>Posuda s viškom masnoće</title>
+            <desc>Razina u posudi pada kako se težina približava cilju</desc>
+            <defs><clipPath id="jarClip"><rect x="250" y="60" width="180" height="260" rx="16"/></clipPath></defs>
+            <g id="jarTicks"></g>
+            <path id="jarFluid" d="" fill="#f2c14e" clip-path="url(#jarClip)"/>
+            <path id="jarFluid2" d="" fill="#e0a92f" opacity="0.55" clip-path="url(#jarClip)"/>
+            <rect x="250" y="60" width="180" height="260" rx="16" fill="none" stroke="#b9bea3" stroke-width="2"/>
+            <rect x="258" y="66" width="10" height="200" rx="5" fill="#ffffff" opacity="0.35"/>
+            <rect x="240" y="34" width="200" height="22" rx="6" fill="#FBFBF6" stroke="#b9bea3" stroke-width="1.5"/>
+            <text id="jarVol" x="340" y="200" text-anchor="middle" font-size="22" font-weight="600" fill="#22251d" style="font-family:'IBM Plex Mono',monospace;">0 L</text>
+            <text x="340" y="222" text-anchor="middle" font-size="13" fill="#5c6152" style="font-family:'Inter',sans-serif;">viška</text>
+          </svg>
+        </div>
+
+        <p class="jar-status" id="jarStatus"></p>
+        <div class="stat-row" id="jarStats"></div>
+
+        <h3 style="font-family:'Fraunces',serif;font-size:15px;margin:6px 0 8px;font-weight:600;">Višak u blokovima maslaca</h3>
+        <div class="jar-blocks" id="jarBlocks"></div>
+        <p class="jar-blocks-cap" id="jarBlocksCap"></p>
+
+        <p class="jar-note">Pretvorba u litre koristi gustoću masnog tkiva od oko 0,9 kg/L. Izgubljeni kilogrami nisu uvijek samo masnoća (dio je i voda ili mišići), pa je ovo ilustracija, a ne mjerenje.</p>
+        <p class="jar-note">Početna težina je tvoj prvi unos težine, trenutna zadnji unos, a cilj je "Ciljana težina" iz postavki na tabu Unos.</p>
+      </div>
+    </section>
+
+    <!-- ===================== KALKULATOR ===================== -->
+    <section class="tabpanel" id="tab-kalkulator">
+      <h2 class="section-title">Kalkulator dnevnih kalorija</h2>
+      <p class="section-hint">Procjena potrebnog dnevnog unosa na temelju tvojih podataka i željenog roka. Ovo je opća procjena, ne zamjenjuje savjet liječnika ili nutricionista.</p>
+
+      <fieldset class="form-card">
+        <legend>Podaci</legend>
+        <div class="field-row">
+          <div class="field">
+            <label for="calcSex">Spol</label>
+            <select id="calcSex">
+              <option value="m">Muško</option>
+              <option value="z">Žensko</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="calcAge">Dob (godine)</label>
+            <input type="number" id="calcAge" min="10" max="100" step="1" placeholder="npr. 32">
+          </div>
+          <div class="field">
+            <label for="calcHeight">Visina (cm)</label>
+            <input type="number" id="calcHeight" min="100" max="250" step="1" placeholder="npr. 178">
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field">
+            <label for="calcCurrentWeight">Trenutna težina (kg)</label>
+            <input type="number" id="calcCurrentWeight" min="30" max="300" step="0.1" placeholder="npr. 84.5">
+          </div>
+          <div class="field">
+            <label for="calcTargetWeight">Ciljana težina (kg)</label>
+            <input type="number" id="calcTargetWeight" min="30" max="300" step="0.1" placeholder="npr. 78">
+          </div>
+          <div class="field">
+            <label for="calcWeeks">Rok (broj tjedana)</label>
+            <input type="number" id="calcWeeks" min="1" max="104" step="1" placeholder="npr. 12">
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field" style="flex:1 1 260px;">
+            <label for="calcActivity">Razina tjelesne aktivnosti</label>
+            <select id="calcActivity">
+              <option value="1.2">Sjedilački način života (malo ili nimalo vježbanja)</option>
+              <option value="1.375">Lagana aktivnost (1–3 dana / tjedan)</option>
+              <option value="1.55" selected>Umjerena aktivnost (3–5 dana / tjedan)</option>
+              <option value="1.725">Visoka aktivnost (6–7 dana / tjedan)</option>
+              <option value="1.9">Vrlo visoka aktivnost (fizički posao ili trening 2×/dan)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:14px;"><button class="btn" id="calcRun">Izračunaj</button></div>
+      </fieldset>
+
+      <div class="receipt" id="calcResult" style="display:none;"></div>
+    </section>
+
+    <!-- ===================== IZVOZ ===================== -->
+    <section class="tabpanel" id="tab-izvoz">
+      <h2 class="section-title">Izvoz i uvoz podataka</h2>
+      <p class="section-hint">Svi podaci žive lokalno u ovom pregledniku (localStorage). Redovito izvezi backup ako mijenjaš uređaj ili čistiš podatke preglednika.</p>
+
+      <div class="export-actions">
+        <button class="btn" id="exportJson">Izvezi JSON</button>
+        <button class="btn toast-btn" id="exportCsv">Izvezi CSV</button>
+        <label class="btn ghost" style="cursor:pointer;">
+          Uvezi JSON backup
+          <input type="file" id="importFile" accept="application/json" style="display:none;">
+        </label>
+      </div>
+
+      <div class="danger-zone">
+        <h3>Opasna zona</h3>
+        <p style="margin:0 0 10px;font-size:13.5px;color:var(--ink-soft);">Ovo trajno briše sve unose, aktivnosti, težine i postavke iz ovog preglednika.</p>
+        <button class="btn brick-btn" id="clearAll">Obriši sve podatke</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast-msg" id="toastMsg"></div>
+
+<script>
+/* ============ DATA LAYER ============ */
+const LS_KEY = 'wt_diary_v1';
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.warn('Greška pri čitanju localStorage', e); }
+  return { meals:[], activities:[], weights:[], settings:{ goal:null, height:null, targetWeight:null, targetDate:null }, presets:[] };
+}
+function saveData(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+let state = loadData();
+if(!state.settings) state.settings = { goal:null, height:null };
+if(!state.presets) state.presets = [];
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmtDateHr(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('hr-HR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+const MEAL_LABELS = { dorucak:'Doručak', rucak:'Ručak', vecera:'Večera', medjuobrok:'Međuobrok' };
+
+function showToast(msg){
+  const el = document.getElementById('toastMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+/* ============ TABS ============ */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('section.tabpanel').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'grafovi') renderCharts();
+    if(btn.dataset.tab === 'kalendar') renderCalendar();
+    if(btn.dataset.tab === 'staklenka') renderJar();
+    if(btn.dataset.tab === 'kalkulator') prefillCalculator();
+  });
+});
+
+/* ============ DEFAULT DATES ============ */
+document.getElementById('mealDate').value = todayStr();
+document.getElementById('actDate').value = todayStr();
+document.getElementById('weightDate').value = todayStr();
+
+/* ============ SETTINGS ============ */
+document.getElementById('setGoal').value = state.settings.goal ?? '';
+document.getElementById('setHeight').value = state.settings.height ?? '';
+document.getElementById('setTargetWeight').value = state.settings.targetWeight ?? '';
+document.getElementById('setTargetDate').value = state.settings.targetDate ?? '';
+document.getElementById('setCreditExercise').checked = state.settings.creditExercise ?? true;
+document.getElementById('saveSettings').addEventListener('click', ()=>{
+  const g = parseFloat(document.getElementById('setGoal').value);
+  const h = parseFloat(document.getElementById('setHeight').value);
+  const tw = parseFloat(document.getElementById('setTargetWeight').value);
+  const td = document.getElementById('setTargetDate').value;
+  state.settings.goal = isNaN(g) ? null : g;
+  state.settings.height = isNaN(h) ? null : h;
+  state.settings.targetWeight = isNaN(tw) ? null : tw;
+  state.settings.targetDate = td || null;
+  state.settings.creditExercise = document.getElementById('setCreditExercise').checked;
+  saveData();
+  renderToday();
+  renderCalendar();
+  showToast('Postavke spremljene.');
+});
+
+/* ============ ADD ENTRIES ============ */
+document.getElementById('addMeal').addEventListener('click', ()=>{
+  const kcal = parseFloat(document.getElementById('mealKcal').value);
+  const date = document.getElementById('mealDate').value || todayStr();
+  if(!kcal || kcal <= 0){ showToast('Unesi valjanu vrijednost kalorija.'); return; }
+  state.meals.push({
+    id: uid(), date,
+    type: document.getElementById('mealType').value,
+    kcal, note: document.getElementById('mealNote').value.trim()
+  });
+  saveData();
+  document.getElementById('mealKcal').value = '';
+  document.getElementById('mealNote').value = '';
+  document.getElementById('mealPreset').value = '';
+  renderToday(); renderCalendar();
+  showToast('Obrok dodan.');
+});
+
+/* ============ SPREMLJENI OBROCI (PREDLOŠCI) ============ */
+function renderPresets(){
+  const select = document.getElementById('mealPreset');
+  const list = document.getElementById('presetList');
+  const sorted = [...state.presets].sort((a,b)=>a.name.localeCompare(b.name,'hr'));
+
+  select.innerHTML = '<option value="">— odaberi spremljeni obrok —</option>' +
+    sorted.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} — ${MEAL_LABELS[p.type]} — ${p.kcal} kcal</option>`).join('');
+
+  if(sorted.length === 0){
+    list.innerHTML = `<span style="font-size:12px;color:var(--ink-soft);font-style:italic;">Još nema spremljenih obroka — unesi obrok i klikni "Spremi kao predložak".</span>`;
+  } else {
+    list.innerHTML = sorted.map(p=>`
+      <span class="preset-chip">
+        ${escapeHtml(p.name)} · ${p.kcal} kcal
+        <button data-del-preset="${p.id}" title="Obriši predložak">✕</button>
+      </span>
+    `).join('');
+  }
+
+  list.querySelectorAll('[data-del-preset]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.presets = state.presets.filter(p=>p.id !== btn.dataset.delPreset);
+      saveData();
+      renderPresets();
+      showToast('Predložak obrisan.');
+    });
+  });
+}
+
+document.getElementById('mealPreset').addEventListener('change', (e)=>{
+  const preset = state.presets.find(p=>p.id === e.target.value);
+  if(!preset) return;
+  document.getElementById('mealType').value = preset.type;
+  document.getElementById('mealKcal').value = preset.kcal;
+  document.getElementById('mealNote').value = preset.name;
+});
+
+document.getElementById('savePreset').addEventListener('click', ()=>{
+  const type = document.getElementById('mealType').value;
+  const kcal = parseFloat(document.getElementById('mealKcal').value);
+  const noteVal = document.getElementById('mealNote').value.trim();
+  if(!kcal || kcal <= 0){ showToast('Prvo upiši kalorije obroka koji želiš spremiti kao predložak.'); return; }
+  const suggested = noteVal || MEAL_LABELS[type];
+  const name = prompt('Naziv predloška:', suggested);
+  if(!name || !name.trim()) return;
+  state.presets.push({ id: uid(), name: name.trim(), type, kcal });
+  saveData();
+  renderPresets();
+  showToast(`Predložak "${name.trim()}" spremljen.`);
+});
+
+document.getElementById('addAct').addEventListener('click', ()=>{
+  const kcal = parseFloat(document.getElementById('actKcal').value);
+  const name = document.getElementById('actName').value.trim();
+  const date = document.getElementById('actDate').value || todayStr();
+  if(!name){ showToast('Upiši naziv aktivnosti.'); return; }
+  if(!kcal || kcal <= 0){ showToast('Unesi valjanu vrijednost potrošenih kalorija.'); return; }
+  state.activities.push({ id: uid(), date, name, kcal });
+  saveData();
+  document.getElementById('actName').value = '';
+  document.getElementById('actKcal').value = '';
+  renderToday(); renderCalendar();
+  showToast('Aktivnost dodana.');
+});
+
+document.getElementById('addWeight').addEventListener('click', ()=>{
+  const kg = parseFloat(document.getElementById('weightKg').value);
+  const date = document.getElementById('weightDate').value || todayStr();
+  if(!kg || kg <= 0){ showToast('Unesi valjanu težinu.'); return; }
+  const existing = state.weights.find(w=>w.date===date);
+  if(existing){ existing.kg = kg; } else { state.weights.push({ id: uid(), date, kg }); }
+  saveData();
+  document.getElementById('weightKg').value = '';
+  renderToday(); renderCalendar();
+  showToast('Težina spremljena.');
+});
+
+/* ============ TODAY SUMMARY ============ */
+function renderKcalRing(){
+  const box = document.getElementById('kcalRingSection');
+  const t = todayStr();
+  const mealsToday = state.meals.filter(m=>m.date===t);
+  const actsToday = state.activities.filter(a=>a.date===t);
+  const kcalIn = mealsToday.reduce((s,m)=>s+m.kcal,0);
+  const kcalOut = actsToday.reduce((s,a)=>s+a.kcal,0);
+  const goal = state.settings.goal;
+
+  if(!goal){
+    box.innerHTML = `<p class="kcal-ring-empty">Postavi "Cilj kalorija / dan" niže da bi se ovdje pojavio prsten dnevnog napretka.</p>`;
+    return;
+  }
+
+  const creditExercise = state.settings.creditExercise ?? true;
+  const allowance = goal + (creditExercise ? kcalOut : 0);
+  const activityNote = creditExercise && kcalOut ? ` (uklj. +${kcalOut} od aktivnosti)` : '';
+  const circumference = 2 * Math.PI * 70;
+
+  if(kcalIn <= allowance){
+    const frac = allowance > 0 ? Math.min(1, kcalIn / allowance) : 0;
+    const offset = circumference * (1 - frac);
+    const remaining = allowance - kcalIn;
+    const pct = Math.round(frac * 100);
+    box.innerHTML = `
+      <div class="kcal-ring-wrap">
+        <svg viewBox="0 0 160 160">
+          <circle class="track" cx="80" cy="80" r="70"></circle>
+          <circle class="progress" cx="80" cy="80" r="70" stroke="var(--moss)"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+            style="transform:rotate(-90deg); transform-origin:80px 80px;"></circle>
+        </svg>
+        <div class="kcal-ring-center">
+          <div class="big">${kcalIn}</div>
+          <div class="sub">${allowance} kcal</div>
+          <div class="pct">${pct}% uneseno</div>
+        </div>
+      </div>
+      <p class="kcal-ring-caption">Dnevni cilj: ${goal} kcal${activityNote} · Preostalo: ${remaining} kcal</p>
+    `;
+  } else {
+    const over = kcalIn - allowance;
+    box.innerHTML = `
+      <div class="kcal-ring-wrap">
+        <svg viewBox="0 0 160 160">
+          <circle class="track" cx="80" cy="80" r="70"></circle>
+          <circle class="progress" cx="80" cy="80" r="70" stroke="var(--brick)"
+            stroke-dasharray="${circumference}" stroke-dashoffset="0"
+            style="transform:rotate(-90deg); transform-origin:80px 80px;"></circle>
+        </svg>
+        <span class="kcal-ring-arrow">⟳</span>
+        <div class="kcal-ring-center">
+          <div class="big" style="color:var(--brick);">${kcalIn}</div>
+          <div class="sub">${allowance} kcal</div>
+          <div class="pct over">+${over} kcal prekoračeno</div>
+        </div>
+      </div>
+      <p class="kcal-ring-caption">Dnevni cilj: ${goal} kcal${activityNote} · Prekoračeno za: ${over} kcal</p>
+    `;
+  }
+}
+
+function renderToday(){
+  renderKcalRing();
+  const t = todayStr();
+  const mealsToday = state.meals.filter(m=>m.date===t);
+  const actsToday = state.activities.filter(a=>a.date===t);
+  const kcalIn = mealsToday.reduce((s,m)=>s+m.kcal,0);
+  const kcalOut = actsToday.reduce((s,a)=>s+a.kcal,0);
+  const sortedW = [...state.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  const lastW = sortedW.length ? sortedW[sortedW.length-1] : null;
+
+  let bmiHtml = '';
+  if(lastW && state.settings.height){
+    const hM = state.settings.height/100;
+    const bmi = lastW.kg / (hM*hM);
+    bmiHtml = `<div class="stat-card"><div class="label">BMI</div><div class="value">${bmi.toFixed(1)}</div></div>`;
+  }
+  let goalHtml = '';
+  if(state.settings.goal){
+    const creditExercise = state.settings.creditExercise ?? true;
+    const allowance = state.settings.goal + (creditExercise ? kcalOut : 0);
+    const diff = allowance - kcalIn;
+    goalHtml = `<div class="stat-card"><div class="label">Do cilja${creditExercise && kcalOut ? ' (uklj. aktivnost)' : ''}</div><div class="value ${diff>=0?'moss':'brick'}">${diff>=0?diff:'+'+Math.abs(diff)}</div></div>`;
+  }
+
+  document.getElementById('today-stats').innerHTML = `
+    <div class="stat-card"><div class="label">Uneseno danas</div><div class="value moss">${kcalIn} kcal</div></div>
+    <div class="stat-card"><div class="label">Potrošeno danas</div><div class="value toast">${kcalOut} kcal</div></div>
+    <div class="stat-card"><div class="label">Zadnja težina</div><div class="value brick">${lastW ? lastW.kg+' kg' : '—'}</div></div>
+    ${bmiHtml}
+    ${goalHtml}
+  `;
+}
+
+/* ============ CALENDAR ============ */
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+let selectedDate = null;
+const DOW_LABELS = ['Pon','Uto','Sri','Čet','Pet','Sub','Ned'];
+
+document.getElementById('calDow').innerHTML = DOW_LABELS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+document.getElementById('calPrev').addEventListener('click', ()=>{
+  calMonth--; if(calMonth<0){calMonth=11; calYear--;}
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', ()=>{
+  calMonth++; if(calMonth>11){calMonth=0; calYear++;}
+  renderCalendar();
+});
+
+function dayHasData(iso){
+  return state.meals.some(m=>m.date===iso) || state.activities.some(a=>a.date===iso) || state.weights.some(w=>w.date===iso);
+}
+
+function overageColor(pct){
+  // pct 0..1 (0 = na cilju, 1 = 100%+ preko cilja) -> boja od blijede do jako crvene
+  const t = Math.max(0, Math.min(pct, 1));
+  const a = [246,244,236]; // paper-inv
+  const b = [168,63,48];   // brick
+  const rgb = a.map((c,i)=>Math.round(c + (b[i]-c)*t));
+  return `rgb(${rgb.join(',')})`;
+}
+
+function renderCalendar(){
+  const label = new Date(calYear, calMonth, 1).toLocaleDateString('hr-HR', { month:'long', year:'numeric' });
+  document.getElementById('calLabel').textContent = label.charAt(0).toUpperCase()+label.slice(1);
+
+  const firstDow = (new Date(calYear, calMonth, 1).getDay() + 6) % 7; // Monday=0
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const todayIso = todayStr();
+  const goal = state.settings.goal;
+  const creditExercise = state.settings.creditExercise ?? true;
+
+  let html = '';
+  for(let i=0;i<firstDow;i++) html += `<div class="cal-day empty"></div>`;
+
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const mealsD = state.meals.filter(m=>m.date===iso);
+    const actsD = state.activities.filter(a=>a.date===iso);
+    const kcalIn = mealsD.reduce((s,m)=>s+m.kcal,0);
+    const kcalOutD = actsD.reduce((s,a)=>s+a.kcal,0);
+    const allowanceD = goal ? goal + (creditExercise ? kcalOutD : 0) : null;
+    const classes = ['cal-day'];
+    if(iso===todayIso) classes.push('today');
+    if(iso===selectedDate) classes.push('selected');
+
+    let cellStyle = '';
+    let warnBadge = '';
+    if(allowanceD && kcalIn > allowanceD){
+      const pct = (kcalIn - allowanceD) / allowanceD;
+      // selekcija (klik) ima prednost nad bojom pozadine da ostane jasno što je odabrano
+      if(iso !== selectedDate){
+        cellStyle = `style="background-color:${overageColor(pct)};"`;
+        if(pct > 0.4) classes.push('over-hot');
+      }
+      warnBadge = `<div class="warn-badge" title="Kalorije premašene za ${Math.round(pct*100)}%">!</div>`;
+    }
+
+    html += `<div class="${classes.join(' ')}" data-date="${iso}" ${cellStyle}>
+      ${warnBadge}
+      ${dayHasData(iso) ? '<div class="dot"></div>' : ''}
+      <div class="num">${d}</div>
+      <div class="mini">${kcalIn ? kcalIn+' kcal' : ''}</div>
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+
+  document.querySelectorAll('#calGrid .cal-day[data-date]').forEach(cell=>{
+    cell.addEventListener('click', ()=>{
+      selectedDate = cell.dataset.date;
+      renderCalendar();
+      renderDayReceipt(selectedDate);
+    });
+  });
+
+  if(selectedDate) renderDayReceipt(selectedDate);
+}
+
+function renderDayReceipt(iso){
+  const panel = document.getElementById('dayReceipt');
+  panel.style.display = 'block';
+  const mealsD = state.meals.filter(m=>m.date===iso);
+  const actsD = state.activities.filter(a=>a.date===iso);
+  const wD = state.weights.find(w=>w.date===iso);
+  const kcalIn = mealsD.reduce((s,m)=>s+m.kcal,0);
+  const kcalOut = actsD.reduce((s,a)=>s+a.kcal,0);
+
+  let rows = '';
+  mealsD.forEach(m=>{
+    rows += `<div class="rline">
+      <span>${MEAL_LABELS[m.type]}${m.note?` <span class="tag">(${escapeHtml(m.note)})</span>`:''}</span>
+      <span>${m.kcal} kcal <button class="icon-btn" data-del="meal:${m.id}" title="Obriši">✕</button></span>
+    </div>`;
+  });
+  actsD.forEach(a=>{
+    rows += `<div class="rline">
+      <span>${escapeHtml(a.name)} <span class="tag">(aktivnost)</span></span>
+      <span>−${a.kcal} kcal <button class="icon-btn" data-del="act:${a.id}" title="Obriši">✕</button></span>
+    </div>`;
+  });
+  if(wD){
+    rows += `<div class="rline">
+      <span>Težina</span>
+      <span>${wD.kg} kg <button class="icon-btn" data-del="weight:${wD.id}" title="Obriši">✕</button></span>
+    </div>`;
+  }
+  if(!rows){
+    rows = `<p class="empty-note">Nema unosa za ovaj dan.</p>`;
+  }
+
+  panel.innerHTML = `
+    <h4><span>${fmtDateHr(iso)}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);">dnevni izvod</span></h4>
+    ${rows}
+    ${(mealsD.length||actsD.length) ? `<div class="rline total"><span>Neto (uneseno − potrošeno)</span><span>${kcalIn-kcalOut} kcal</span></div>` : ''}
+  `;
+
+  panel.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const [kind,id] = btn.dataset.del.split(':');
+      if(kind==='meal') state.meals = state.meals.filter(m=>m.id!==id);
+      if(kind==='act') state.activities = state.activities.filter(a=>a.id!==id);
+      if(kind==='weight') state.weights = state.weights.filter(w=>w.id!==id);
+      saveData();
+      renderCalendar();
+      renderDayReceipt(iso);
+      renderToday();
+      showToast('Unos obrisan.');
+    });
+  });
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ============ CHARTS ============ */
+let currentRange = 30;
+let trendChartInstance = null;
+let dailyChartInstance = null;
+
+// Plugin koji iscrtava vodoravne obojane zone (npr. BMI zone) iza linije grafa.
+const zoneBandsPlugin = {
+  id: 'zoneBands',
+  beforeDatasetsDraw(chart, args, opts){
+    const bands = opts && opts.bands;
+    if(!bands || !bands.length) return;
+    const { ctx, chartArea, scales } = chart;
+    if(!chartArea) return;
+    const y = scales.y;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+    ctx.clip();
+    bands.forEach(band=>{
+      const yTop = y.getPixelForValue(band.to);
+      const yBottom = y.getPixelForValue(band.from);
+      ctx.fillStyle = band.color;
+      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+      if(band.label){
+        ctx.font = "600 10px 'IBM Plex Mono', monospace";
+        ctx.fillStyle = band.labelColor || '#7a7a6a';
+        ctx.textAlign = 'right';
+        ctx.fillText(band.label, chartArea.right - 8, Math.max(yTop, chartArea.top) + 13);
+      }
+    });
+    ctx.restore();
+  }
+};
+if(typeof Chart !== 'undefined') Chart.register(zoneBandsPlugin);
+
+document.getElementById('rangeButtons').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-range]');
+  if(!btn) return;
+  document.querySelectorAll('#rangeButtons button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = btn.dataset.range === 'all' ? 'all' : parseInt(btn.dataset.range);
+  renderDailyChart();
+});
+
+function lastNDates(n){
+  const dates = [];
+  const base = new Date();
+  for(let i=n-1;i>=0;i--){
+    const d = new Date(base);
+    d.setDate(d.getDate()-i);
+    dates.push(d.toISOString().slice(0,10));
+  }
+  return dates;
+}
+
+function fmtAxisDate(iso){
+  const d = new Date(iso+'T00:00:00');
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.`;
+}
+
+function renderCharts(){
+  if(typeof Chart === 'undefined'){
+    document.querySelectorAll('.chart-box canvas').forEach(c=>{
+      if(!c.dataset.errShown){
+        c.dataset.errShown = '1';
+        c.insertAdjacentHTML('afterend', '<p style="color:var(--brick);font-size:13px;">Graf se nije mogao učitati — biblioteka Chart.js nije dostupna (provjeri internetsku vezu i osvježi stranicu).</p>');
+      }
+    });
+    return;
+  }
+  renderTrendChart();
+  renderDailyChart();
+}
+
+/* ---------- Graf 1: Trend napretka i cilj ---------- */
+function renderTrendChart(){
+  const msgEl = document.getElementById('trendMsg');
+  const captionEl = document.getElementById('trendCaption');
+  const canvasEl = document.getElementById('trendChart');
+  const sortedW = [...state.weights].sort((a,b)=>a.date.localeCompare(b.date));
+
+  if(sortedW.length === 0){
+    canvasEl.style.display = 'none';
+    captionEl.textContent = '';
+    msgEl.style.display = 'block';
+    msgEl.textContent = 'Unesi barem jednu težinu (tab Unos) da bi se ovdje pojavio trend.';
+    if(trendChartInstance){ trendChartInstance.destroy(); trendChartInstance = null; }
+    return;
+  }
+  canvasEl.style.display = 'block';
+  msgEl.style.display = 'none';
+
+  const target = state.settings.targetWeight;
+  const targetDate = state.settings.targetDate;
+  const height = state.settings.height;
+
+  const startDate = sortedW[0].date;
+  const todayIso = todayStr();
+  let endDate = todayIso > sortedW[sortedW.length-1].date ? todayIso : sortedW[sortedW.length-1].date;
+  if(target && targetDate && targetDate > endDate) endDate = targetDate;
+
+  const axis = [];
+  for(let d = new Date(startDate+'T00:00:00'); d <= new Date(endDate+'T00:00:00'); d.setDate(d.getDate()+1)){
+    axis.push(new Date(d).toISOString().slice(0,10));
+  }
+  const wMap = {};
+  sortedW.forEach(w=>wMap[w.date]=w.kg);
+  const actualData = axis.map(d => (wMap[d] !== undefined ? wMap[d] : null));
+  const lastIndex = axis.length - 1;
+  const todayIndex = axis.indexOf(todayIso);
+
+  // Oznake na x-osi su stvarni datumi, razmaknuti na ~2 tjedna (kraći raspon)
+  // ili ~mjesec dana (dulji raspon), umjesto generičkih "Tjedan N" oznaka.
+  let dayStep;
+  if(axis.length <= 70) dayStep = 14;
+  else dayStep = 30;
+
+  const labels = axis.map((d,i)=>{
+    if(i === todayIndex) return 'Danas';
+    if(i === 0 || i % dayStep === 0) return fmtAxisDate(d);
+    return '';
+  });
+
+  const datasets = [
+    { label:'Težina', data:actualData, borderColor:'#a83f30', backgroundColor:'rgba(168,63,48,0.12)', spanGaps:true, tension:.25, pointRadius:3, fill:false }
+  ];
+
+  // Projekcija do cilja: ako je zadan i cilj i rok, linija ide koso od prve izmjerene težine
+  // do cilja na taj datum (pa ostaje ravna); ako je zadan samo cilj (bez roka), linija je ravna.
+  if(target){
+    const anchorWeight = actualData[0] !== null ? actualData[0] : sortedW[0].kg;
+    let projLabel = 'Ciljna težina';
+    let projectionData;
+    if(targetDate){
+      projLabel = 'Projekcija do cilja';
+      const anchorTime = new Date(startDate+'T00:00:00').getTime();
+      const targetTime = new Date(targetDate+'T00:00:00').getTime();
+      const totalSpan = targetTime - anchorTime;
+      projectionData = axis.map(d=>{
+        if(totalSpan <= 0) return target;
+        const t = new Date(d+'T00:00:00').getTime();
+        let frac = (t - anchorTime) / totalSpan;
+        frac = Math.max(0, Math.min(1, frac));
+        return +(anchorWeight + (target - anchorWeight) * frac).toFixed(2);
+      });
+    } else {
+      projectionData = axis.map(()=>target);
+    }
+    datasets.push({
+      label:projLabel, data:projectionData,
+      borderColor:'#3a4f35', borderDash:[7,5], pointRadius:0, borderWidth:2, fill:false
+    });
+  }
+
+  // BMI zone: zelena (normalna), narančasta (povišena), crvena (opasna zona)
+  const bands = [];
+  let yMin, yMax;
+  if(height){
+    const hM = height/100;
+    const normalMin = 18.5*hM*hM, normalMax = 24.9*hM*hM, overMax = 29.9*hM*hM;
+    bands.push({ from: normalMin, to: normalMax, color:'rgba(90,140,70,0.16)', label:'NORMALNA (BMI)', labelColor:'#4f6b47' });
+    bands.push({ from: normalMax, to: overMax, color:'rgba(224,150,60,0.18)', label:'POVIŠENA (BMI)', labelColor:'#96622f' });
+    bands.push({ from: overMax, to: 60*hM*hM, color:'rgba(180,60,48,0.14)', label:'OPASNA ZONA (BMI)', labelColor:'#a83f30' });
+    // Prisilno proširi os prema dolje da zelena (normalna) zona uvijek bude djelomično vidljiva,
+    // čak i kad je stvarna/ciljana težina znatno iznad nje.
+    const allVals = [...actualData, ...datasets.slice(1).flatMap(ds=>ds.data)].filter(v=>v!==null && v!==undefined);
+    const dataMin = allVals.length ? Math.min(...allVals) : normalMax;
+    const dataMax = allVals.length ? Math.max(...allVals) : normalMax;
+    yMin = Math.max(75, +(Math.min(normalMin, dataMin) - 2).toFixed(1));
+    yMax = +(Math.max(dataMax, normalMax) + 2).toFixed(1);
+  }
+
+  if(trendChartInstance) trendChartInstance.destroy();
+  trendChartInstance = new Chart(canvasEl, {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true,
+      events:[],
+      layout:{ padding:{ right: target ? 52 : 8 } },
+      plugins:{
+        legend:{ display:false },
+        zoneBands:{ bands },
+        tooltip:{ enabled:false }
+      },
+      scales:{
+        y:{ min:yMin, max:yMax, ticks:{ font:{ family:'IBM Plex Mono' }, callback:(v)=>v+' kg' }, grid:{ color:'#eae7da' } },
+        x:{
+          ticks:{ font:{ family:'IBM Plex Mono' }, autoSkip:false, maxRotation:0 },
+          grid:{ color:(ctx)=> (ctx.index===todayIndex || ctx.index%dayStep===0) ? '#e2ded0' : 'rgba(0,0,0,0)', drawTicks:false }
+        }
+      }
+    },
+    plugins: target ? [{
+      id:'targetLabel',
+      afterDatasetsDraw(chart){
+        const {ctx, chartArea, scales} = chart;
+        const y = scales.y.getPixelForValue(target);
+        ctx.save();
+        ctx.font = "600 12px 'IBM Plex Mono', monospace";
+        ctx.fillStyle = '#3a4f35';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${target} kg`, chartArea.right + 6, y + 4);
+        ctx.restore();
+      }
+    }] : []
+  });
+
+  const recentVals = actualData.slice(Math.max(0, axis.length-7)).filter(v=>v!==null && v!==undefined);
+  const weeklyAvg = recentVals.length ? (recentVals.reduce((s,v)=>s+v,0)/recentVals.length) : null;
+  const lastKnown = [...actualData].reverse().find(v=>v!==null && v!==undefined);
+  let captionText = '';
+  if(weeklyAvg !== null) captionText += `Tjedni prosjek: ${weeklyAvg.toFixed(1)} kg.`;
+  if(target && lastKnown !== undefined){
+    const toGoal = +(lastKnown - target).toFixed(1);
+    captionText += ` Do cilja: ${Math.abs(toGoal)} kg.`;
+  }
+  captionEl.textContent = captionText;
+}
+
+/* ---------- Graf 2: Dnevna analiza kalorije vs. težina ---------- */
+function renderDailyChart(){
+  const canvasEl = document.getElementById('dailyChart');
+  let dateRange;
+  if(currentRange === 'all'){
+    const allDates = new Set([...state.meals.map(m=>m.date), ...state.activities.map(a=>a.date), ...state.weights.map(w=>w.date)]);
+    if(allDates.size === 0){
+      dateRange = lastNDates(30);
+    } else {
+      const sorted = [...allDates].sort();
+      const start = new Date(sorted[0]+'T00:00:00');
+      const end = new Date();
+      dateRange = [];
+      for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+        dateRange.push(new Date(d).toISOString().slice(0,10));
+      }
+    }
+  } else {
+    dateRange = lastNDates(currentRange);
+  }
+
+  const kcalInData = dateRange.map(d => state.meals.filter(m=>m.date===d).reduce((s,m)=>s+m.kcal,0));
+  const kcalOutData = dateRange.map(d => state.activities.filter(a=>a.date===d).reduce((s,a)=>s+a.kcal,0));
+  const labels = dateRange.map(fmtAxisDate);
+
+  const sortedW = [...state.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  function weightOnOrBefore(dateIso){
+    let last = null;
+    for(const w of sortedW){
+      if(w.date <= dateIso) last = w.kg; else break;
+    }
+    return last;
+  }
+  const weightData = dateRange.map(d => weightOnOrBefore(d));
+  const knownWeights = weightData.filter(v=>v!==null && v!==undefined);
+  let yKgMin, yKgMax;
+  if(knownWeights.length){
+    const dataMin = Math.min(...knownWeights);
+    const dataMax = Math.max(...knownWeights);
+    const pad = Math.max(5, (dataMax-dataMin)/2); // barem ±5 kg, ili više ako je raspon podataka i sam veći
+    yKgMin = +(dataMin - pad).toFixed(1);
+    yKgMax = +(dataMax + pad).toFixed(1);
+  }
+
+  if(dailyChartInstance) dailyChartInstance.destroy();
+  dailyChartInstance = new Chart(canvasEl, {
+    data:{
+      labels,
+      datasets:[
+        { type:'bar', label:'Uneseno', data:kcalInData, backgroundColor:'#2f6b5e', stack:'kcal', yAxisID:'yKcal', order:2, borderRadius:2 },
+        { type:'bar', label:'Potrošeno', data:kcalOutData, backgroundColor:'#f0b27a', stack:'kcal', yAxisID:'yKcal', order:2, borderRadius:2 },
+        { type:'line', label:'Težina', data:weightData, borderColor:'#a83f30', backgroundColor:'#a83f30', spanGaps:true, tension:.25, pointRadius:3, yAxisID:'yKg', order:1 }
+      ]
+    },
+    options:{
+      responsive:true,
+      events:[],
+      plugins:{
+        legend:{ position:'bottom', labels:{ font:{ family:'Inter' } } },
+        tooltip:{ enabled:false }
+      },
+      scales:{
+        yKcal:{ type:'linear', position:'left', beginAtZero:true, stacked:true, title:{ display:true, text:'kcal', font:{ family:'IBM Plex Mono' } }, ticks:{ font:{ family:'IBM Plex Mono' } } },
+        yKg:{ type:'linear', position:'right', stacked:false, min:yKgMin, max:yKgMax, title:{ display:true, text:'kg', font:{ family:'IBM Plex Mono' } }, grid:{ drawOnChartArea:false }, ticks:{ font:{ family:'IBM Plex Mono' } } },
+        x:{ stacked:true, ticks:{ font:{ family:'IBM Plex Mono' } } }
+      }
+    }
+  });
+}
+
+/* ============ EXPORT / IMPORT ============ */
+function downloadBlob(content, filename, type){
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportJson').addEventListener('click', ()=>{
+  downloadBlob(JSON.stringify(state, null, 2), `dnevnik-backup-${todayStr()}.json`, 'application/json');
+  showToast('JSON izvezen.');
+});
+
+document.getElementById('exportCsv').addEventListener('click', ()=>{
+  const rows = [['Datum','Vrsta','Kategorija','Vrijednost','Jedinica','Napomena']];
+  state.meals.forEach(m=>rows.push([m.date,'Obrok',MEAL_LABELS[m.type],m.kcal,'kcal',m.note||'']));
+  state.activities.forEach(a=>rows.push([a.date,'Aktivnost',a.name,a.kcal,'kcal','']));
+  state.weights.forEach(w=>rows.push([w.date,'Tezina','Tjelesna tezina',w.kg,'kg','']));
+  rows.sort((a,b)=> a[0]===b[0] ? 0 : (a[0] < b[0] ? -1 : 1));
+  const csv = rows.map(r => r.map(cell => {
+    const s = String(cell).replace(/"/g,'""');
+    return /[",\n]/.test(s) ? `"${s}"` : s;
+  }).join(',')).join('\n');
+  downloadBlob('\uFEFF'+csv, `dnevnik-${todayStr()}.csv`, 'text/csv;charset=utf-8');
+  showToast('CSV izvezen.');
+});
+
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!parsed.meals || !parsed.activities || !parsed.weights){
+        showToast('Datoteka ne izgleda kao valjan backup.');
+        return;
+      }
+      state = parsed;
+      if(!state.settings) state.settings = { goal:null, height:null };
+      if(!state.presets) state.presets = [];
+      saveData();
+      document.getElementById('setGoal').value = state.settings.goal ?? '';
+      document.getElementById('setHeight').value = state.settings.height ?? '';
+      document.getElementById('setTargetWeight').value = state.settings.targetWeight ?? '';
+      document.getElementById('setTargetDate').value = state.settings.targetDate ?? '';
+      renderToday(); renderCalendar(); renderCharts(); renderPresets();
+      showToast('Backup uspješno uvezen.');
+    }catch(err){
+      showToast('Greška pri čitanju datoteke.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+document.getElementById('clearAll').addEventListener('click', ()=>{
+  if(!confirm('Sigurno želiš trajno obrisati sve podatke iz ovog preglednika? Ova radnja se ne može poništiti.')) return;
+  state = { meals:[], activities:[], weights:[], settings:{ goal:null, height:null, targetWeight:null, targetDate:null }, presets:[] };
+  saveData();
+  document.getElementById('setGoal').value = '';
+  document.getElementById('setHeight').value = '';
+  document.getElementById('setTargetWeight').value = '';
+  document.getElementById('setTargetDate').value = '';
+  selectedDate = null;
+  document.getElementById('dayReceipt').style.display='none';
+  renderToday(); renderCalendar(); renderCharts(); renderPresets();
+  showToast('Svi podaci su obrisani.');
+});
+
+/* ============ KALORIJSKI KALKULATOR ============ */
+const KCAL_PER_KG = 7700; // uobičajena procjena energetske vrijednosti 1kg tjelesne mase
+
+function prefillCalculator(){
+  if(state.settings.height && !document.getElementById('calcHeight').value){
+    document.getElementById('calcHeight').value = state.settings.height;
+  }
+  const sortedW = [...state.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  if(sortedW.length && !document.getElementById('calcCurrentWeight').value){
+    document.getElementById('calcCurrentWeight').value = sortedW[sortedW.length-1].kg;
+  }
+}
+
+document.getElementById('calcRun').addEventListener('click', ()=>{
+  const sex = document.getElementById('calcSex').value;
+  const age = parseFloat(document.getElementById('calcAge').value);
+  const height = parseFloat(document.getElementById('calcHeight').value);
+  const current = parseFloat(document.getElementById('calcCurrentWeight').value);
+  const target = parseFloat(document.getElementById('calcTargetWeight').value);
+  const weeks = parseFloat(document.getElementById('calcWeeks').value);
+  const activity = parseFloat(document.getElementById('calcActivity').value);
+  const panel = document.getElementById('calcResult');
+
+  if(!age || !height || !current || !target || !weeks){
+    panel.style.display = 'block';
+    panel.innerHTML = `<p class="empty-note">Popuni dob, visinu, trenutnu i ciljanu težinu te rok da bih mogao izračunati.</p>`;
+    return;
+  }
+
+  // Mifflin-St Jeor
+  const bmr = sex === 'm'
+    ? 10*current + 6.25*height - 5*age + 5
+    : 10*current + 6.25*height - 5*age - 161;
+  const tdee = bmr * activity;
+
+  const diffKg = target - current; // negative = gubitak, positive = dobivanje
+  const totalKcalNeeded = diffKg * KCAL_PER_KG;
+  const days = weeks * 7;
+  const dailyAdjustment = totalKcalNeeded / days; // negativno = deficit
+  const dailyTarget = tdee + dailyAdjustment;
+  const weeklyRateKg = diffKg / weeks;
+
+  const minSafe = sex === 'm' ? 1500 : 1200;
+  const warnings = [];
+  if(Math.abs(weeklyRateKg) > 1){
+    warnings.push(`Traženi tempo (${weeklyRateKg.toFixed(2)} kg/tjedan) je brži od uobičajeno preporučenog raspona (do ~0.5–1 kg tjedno). Razmisli o dužem roku.`);
+  }
+  if(dailyTarget < minSafe){
+    warnings.push(`Izračunati dnevni unos (${Math.round(dailyTarget)} kcal) je ispod uobičajeno preporučenog minimuma (~${minSafe} kcal). Produži rok ili se posavjetuj sa stručnjakom prije nego kreneš.`);
+  }
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <h4><span>Procjena</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);">Mifflin-St Jeor</span></h4>
+    <div class="rline"><span>Bazalni metabolizam (BMR)</span><span>${Math.round(bmr)} kcal</span></div>
+    <div class="rline"><span>Održavanje uz odabranu aktivnost (TDEE)</span><span>${Math.round(tdee)} kcal</span></div>
+    <div class="rline"><span>Potrebna promjena mase</span><span>${diffKg>=0?'+':''}${diffKg.toFixed(1)} kg u ${weeks} tj.</span></div>
+    <div class="rline"><span>Tempo</span><span>${weeklyRateKg>=0?'+':''}${weeklyRateKg.toFixed(2)} kg/tjedan</span></div>
+    <div class="rline total"><span>Preporučeni dnevni unos</span><span>${Math.round(dailyTarget)} kcal</span></div>
+    ${warnings.length ? `<div style="margin-top:12px;padding:10px 12px;background:rgba(168,63,48,0.08);border:1px dashed var(--brick);border-radius:8px;">${warnings.map(w=>`<p style="margin:0 0 6px;font-size:12.5px;color:var(--brick);">⚠ ${w}</p>`).join('')}</div>` : ''}
+    <div style="margin-top:14px;"><button class="btn" id="calcApplyGoal">Postavi kao dnevni cilj</button></div>
+  `;
+
+  document.getElementById('calcApplyGoal').addEventListener('click', ()=>{
+    const goalValue = Math.round(dailyTarget);
+    state.settings.goal = goalValue;
+    if(!state.settings.height) state.settings.height = height;
+    state.settings.targetWeight = target;
+    const targetDateObj = new Date();
+    targetDateObj.setDate(targetDateObj.getDate() + Math.round(weeks*7));
+    state.settings.targetDate = targetDateObj.toISOString().slice(0,10);
+    saveData();
+    document.getElementById('setGoal').value = goalValue;
+    document.getElementById('setHeight').value = state.settings.height;
+    document.getElementById('setTargetWeight').value = state.settings.targetWeight;
+    document.getElementById('setTargetDate').value = state.settings.targetDate;
+    renderToday();
+    renderCalendar();
+    showToast(`Cilj postavljen: ${goalValue} kcal/dan, ${target} kg do ${fmtDateHr(state.settings.targetDate)}.`);
+  });
+});
+
+/* ============ STAKLENKA ============ */
+const FAT_DENSITY = 0.9;
+const JAR = { X0:250, X1:430, YB:320, H:260 };
+let jarCur = 1, jarTgt = 1, jarT = 0;
+
+function jarNum(n, d){
+  return (Math.round(n * Math.pow(10,d)) / Math.pow(10,d)).toString().replace('.', ',');
+}
+
+function jarWave(top, amp, ph){
+  let d = `M${JAR.X0},${top}`;
+  for(let x = JAR.X0; x <= JAR.X1; x += 6){
+    d += ` L${x},${(top + Math.sin((x - JAR.X0)/180*Math.PI*2 + ph) * amp).toFixed(2)}`;
+  }
+  d += ` L${JAR.X1},${JAR.YB} L${JAR.X0},${JAR.YB} Z`;
+  return d;
+}
+
+function renderJar(){
+  const msg = document.getElementById('jarMsg');
+  const body = document.getElementById('jarBody');
+  const sortedW = [...state.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  const target = state.settings.targetWeight;
+
+  if(!sortedW.length || !target){
+    const missing = [];
+    if(!sortedW.length) missing.push('unesi barem jednu težinu (tab Unos, kartica Težina)');
+    if(!target) missing.push('postavi "Ciljanu težinu" (tab Unos, postavke)');
+    msg.style.display = 'block';
+    msg.textContent = 'Da bi se vizualizacija mogla prikazati, ' + missing.join(' i ') + '.';
+    body.style.display = 'none';
+    return;
+  }
+
+  const first = sortedW[0];
+  const last = sortedW[sortedW.length-1];
+  const start = first.kg, current = last.kg;
+
+  if(target >= start){
+    msg.style.display = 'block';
+    msg.textContent = `Ciljana težina (${jarNum(target,1)} kg) mora biti manja od prve unesene težine (${jarNum(start,1)} kg, ${fmtDateHr(first.date)}) da bi se posuda mogla prazniti.`;
+    body.style.display = 'none';
+    return;
+  }
+
+  msg.style.display = 'none';
+  body.style.display = 'block';
+
+  const totalExcessKg = start - target;
+  const excessKg = Math.max(0, current - target);
+  const frac = Math.min(1, excessKg / totalExcessKg);
+  const capL = totalExcessKg / FAT_DENSITY;
+  const excessL = excessKg / FAT_DENSITY;
+  const lostKg = Math.max(0, start - current);
+  jarTgt = frac;
+
+  let ticks = '';
+  for(let i = 0; i <= 4; i++){
+    const p = i / 4;
+    const y = JAR.YB - JAR.H * p;
+    ticks += `<line x1="240" y1="${y}" x2="250" y2="${y}" stroke="#8c917a" stroke-width="1.5"/>`;
+    ticks += `<text x="232" y="${y+4}" text-anchor="end" font-size="12" fill="#5c6152" style="font-family:'IBM Plex Mono',monospace;">${jarNum(capL*p,1)} L</text>`;
+    ticks += `<line x1="430" y1="${y}" x2="440" y2="${y}" stroke="#8c917a" stroke-width="1.5"/>`;
+    ticks += `<text x="448" y="${y+4}" text-anchor="start" font-size="12" fill="#5c6152" style="font-family:'IBM Plex Mono',monospace;">${jarNum(totalExcessKg*p,1)} kg</text>`;
+  }
+  document.getElementById('jarTicks').innerHTML = ticks;
+  document.getElementById('jarVol').textContent = jarNum(excessL,1) + ' L';
+
+  let status;
+  if(current <= target) status = 'Cilj je postignut, posuda je prazna.';
+  else if(current > start) status = 'Trenutna težina je iznad početne, pa je posuda puna.';
+  else status = `Još ${jarNum(excessKg,1)} kg do cilja (${Math.round((1-frac)*100)}% viška je već nestalo).`;
+  document.getElementById('jarStatus').textContent = status;
+
+  document.getElementById('jarStats').innerHTML = `
+    <div class="stat-card"><div class="label">Početna (${fmtDateHr(first.date)})</div><div class="value">${jarNum(start,1)} kg</div></div>
+    <div class="stat-card"><div class="label">Trenutna (${fmtDateHr(last.date)})</div><div class="value brick">${jarNum(current,1)} kg</div></div>
+    <div class="stat-card"><div class="label">Cilj</div><div class="value moss">${jarNum(target,1)} kg</div></div>
+    <div class="stat-card"><div class="label">Izgubljeno</div><div class="value toast">${jarNum(lostKg,1)} kg</div></div>
+    <div class="stat-card"><div class="label">Višak (volumen)</div><div class="value">${jarNum(excessL,1)} L</div></div>
+  `;
+
+  const nPacks = excessKg * 4;
+  const useKg = nPacks > 160;
+  const unitKg = useKg ? 1 : 0.25;
+  const n = excessKg / unitKg;
+  const cnt = Math.ceil(n - 0.0001);
+  let blocks = '';
+  for(let i = 0; i < cnt; i++){
+    const part = Math.min(1, n - i);
+    blocks += `<div style="width:18px;height:12px;border-radius:2px;border:1px solid #b8932c;background:linear-gradient(90deg,#f5d66b ${part*100}%,transparent ${part*100}%);"></div>`;
+  }
+  document.getElementById('jarBlocks').innerHTML = blocks;
+  document.getElementById('jarBlocksCap').textContent = cnt
+    ? (useKg ? `Svaki blok je 1 kg viška (ukupno ${jarNum(excessKg,1)} kg).` : `Svaki blok je pakiranje maslaca od 250 g (ukupno ${jarNum(nPacks,1)} pakiranja).`)
+    : 'Nema viška iznad cilja.';
+}
+
+(function jarLoop(){
+  const panel = document.getElementById('tab-staklenka');
+  if(panel && panel.classList.contains('active')){
+    jarT += 0.04;
+    jarCur += (jarTgt - jarCur) * 0.08;
+    const top = JAR.YB - JAR.H * jarCur;
+    const amp = Math.min(3, jarCur * 60);
+    document.getElementById('jarFluid').setAttribute('d', jarWave(top, amp, jarT));
+    document.getElementById('jarFluid2').setAttribute('d', jarWave(top + 4, amp, jarT + 1.5));
+  }
+  requestAnimationFrame(jarLoop);
+})();
+
+/* ============ INIT ============ */
+renderToday();
+renderCalendar();
+renderPresets();
+</script>
+</body>
+</html>
