@@ -1229,8 +1229,17 @@ function renderTrendChart(){
   if(axis.length <= 70) dayStep = 14;
   else dayStep = 30;
 
+  // Na uskim ekranima (telefon) oznake se preklapaju: razmak između oznaka mora biti
+  // barem ~54 px, pa po potrebi povećamo korak, a datume blizu "Danas" izostavimo.
+  const isNarrow = (canvasEl.parentElement.clientWidth || window.innerWidth - 60) < 560;
+  const plotWidth = (canvasEl.parentElement.clientWidth || window.innerWidth - 60) - (isNarrow ? 60 : 90) - (target ? 52 : 8);
+  const pxPerDay = Math.max(plotWidth, 120) / Math.max(axis.length - 1, 1);
+  const minGapDays = Math.ceil(54 / pxPerDay);
+  if(dayStep < minGapDays) dayStep = Math.ceil(minGapDays / 7) * 7;
+
   const labels = axis.map((d,i)=>{
     if(i === todayIndex) return 'Danas';
+    if(todayIndex >= 0 && Math.abs(i - todayIndex) < minGapDays) return '';
     if(i === 0 || i % dayStep === 0) return fmtAxisDate(d);
     return '';
   });
@@ -1292,15 +1301,21 @@ function renderTrendChart(){
       responsive:true,
       events:[],
       layout:{ padding:{ right: target ? 52 : 8 } },
+      // Širina se promijeni (rotacija telefona, promjena prozora): ponovno izračunaj razmak oznaka.
+      onResize:()=>{
+        if(!document.getElementById('tab-grafovi').classList.contains('active')) return;
+        clearTimeout(window._trendResizeTimer);
+        window._trendResizeTimer = setTimeout(renderTrendChart, 200);
+      },
       plugins:{
         legend:{ display:false },
         zoneBands:{ bands },
         tooltip:{ enabled:false }
       },
       scales:{
-        y:{ min:yMin, max:yMax, ticks:{ font:{ family:'IBM Plex Mono' }, callback:(v)=>v+' kg' }, grid:{ color:'#eae7da' } },
+        y:{ min:yMin, max:yMax, ticks:{ font:{ family:'IBM Plex Mono', size: isNarrow ? 10 : 12 }, callback:(v)=>isNarrow ? v : v+' kg' }, grid:{ color:'#eae7da' } },
         x:{
-          ticks:{ font:{ family:'IBM Plex Mono' }, autoSkip:false, maxRotation:0 },
+          ticks:{ font:{ family:'IBM Plex Mono', size: isNarrow ? 10 : 12 }, autoSkip:false, maxRotation:0 },
           grid:{ color:(ctx)=> (ctx.index===todayIndex || ctx.index%dayStep===0) ? '#e2ded0' : 'rgba(0,0,0,0)', drawTicks:false }
         }
       }
