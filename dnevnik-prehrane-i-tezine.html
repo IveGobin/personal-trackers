@@ -430,34 +430,6 @@
 
       <div class="stat-row" id="today-stats"></div>
 
-      <div class="settings-row">
-        <div class="field">
-          <label for="setGoal">Cilj kalorija / dan</label>
-          <input type="number" id="setGoal" min="0" step="10" placeholder="npr. 2000">
-        </div>
-        <div class="field">
-          <label for="setHeight">Visina (cm, za BMI)</label>
-          <input type="number" id="setHeight" min="0" step="1" placeholder="npr. 175">
-        </div>
-        <div class="field">
-          <label for="setTargetWeight">Ciljana težina (kg)</label>
-          <input type="number" id="setTargetWeight" min="0" step="0.1" placeholder="npr. 78">
-        </div>
-        <div class="field">
-          <label for="setTargetDate">Ciljani datum</label>
-          <input type="date" id="setTargetDate">
-        </div>
-        <div class="field" style="flex:1 1 220px;">
-          <label style="display:flex;align-items:center;gap:7px;text-transform:none;font-weight:500;font-size:12.5px;cursor:pointer;">
-            <input type="checkbox" id="setCreditExercise" style="width:15px;height:15px;">
-            Uračunaj potrošene kalorije u dnevni cilj
-          </label>
-        </div>
-        <div class="field" style="justify-content:flex-end;">
-          <button class="btn ghost" id="saveSettings">Spremi postavke</button>
-        </div>
-      </div>
-
       <div class="grid-3">
         <fieldset class="form-card">
           <legend>Obrok</legend>
@@ -536,6 +508,35 @@
           </div>
           <div style="margin-top:12px;"><button class="btn brick-btn" id="addWeight">Spremi težinu</button></div>
         </fieldset>
+      </div>
+
+      <h3 style="font-family:'Fraunces',serif;font-weight:600;font-size:15px;margin:26px 0 10px;">Postavke</h3>
+      <div class="settings-row" style="margin-bottom:0;">
+        <div class="field">
+          <label for="setGoal">Cilj kalorija / dan</label>
+          <input type="number" id="setGoal" min="0" step="10" placeholder="npr. 2000">
+        </div>
+        <div class="field">
+          <label for="setHeight">Visina (cm, za BMI)</label>
+          <input type="number" id="setHeight" min="0" step="1" placeholder="npr. 175">
+        </div>
+        <div class="field">
+          <label for="setTargetWeight">Ciljana težina (kg)</label>
+          <input type="number" id="setTargetWeight" min="0" step="0.1" placeholder="npr. 78">
+        </div>
+        <div class="field">
+          <label for="setTargetDate">Ciljani datum</label>
+          <input type="date" id="setTargetDate">
+        </div>
+        <div class="field" style="flex:1 1 220px;">
+          <label style="display:flex;align-items:center;gap:7px;text-transform:none;font-weight:500;font-size:12.5px;cursor:pointer;">
+            <input type="checkbox" id="setCreditExercise" style="width:15px;height:15px;">
+            Uračunaj potrošene kalorije u dnevni cilj
+          </label>
+        </div>
+        <div class="field" style="justify-content:flex-end;">
+          <button class="btn ghost" id="saveSettings">Spremi postavke</button>
+        </div>
       </div>
     </section>
 
