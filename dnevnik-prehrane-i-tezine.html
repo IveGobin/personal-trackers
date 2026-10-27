@@ -2,7 +2,7 @@
 <html lang="hr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Dnevnik · prehrana i težina</title>
 <meta name="theme-color" content="#4f6b47">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,6 +31,8 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent;}
+  button,select,input,label{touch-action:manipulation;}
   body{
     background:
       radial-gradient(ellipse at top left, rgba(79,107,71,0.07), transparent 55%),
@@ -38,9 +40,13 @@
     color:var(--ink);
     font-family:'Inter',sans-serif;
     min-height:100vh;
+    min-height:100dvh;
     padding:28px 18px 60px;
+    padding-top:max(28px, env(safe-area-inset-top));
+    padding-left:max(18px, env(safe-area-inset-left));
+    padding-right:max(18px, env(safe-area-inset-right));
   }
-  .wrap{max-width:920px;margin:0 auto;}
+  .wrap{max-width:1040px;margin:0 auto;}
 
   header.top{margin-bottom:22px;}
   header.top .eyebrow{
@@ -300,6 +306,98 @@
     z-index:50;
   }
   .toast-msg.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  /* Hover efekti samo na uređajima s mišem (na dodir ostaju "zalijepljeni") */
+  @media (hover:none){
+    .cal-day:hover{border-color:var(--line);transform:none;}
+    .cal-day.today:hover{border-color:var(--moss);}
+    .cal-day.selected:hover{border-color:var(--moss-deep);}
+    .btn:hover{background:var(--moss);}
+    .btn.toast-btn:hover{background:var(--toast);}
+    .btn.brick-btn:hover{background:var(--brick);}
+    .btn.ghost:hover{background:transparent;}
+  }
+
+  /* Veliki ekrani (PC): malo više zraka i prostraniji kalendar */
+  @media (min-width:1000px){
+    body{padding-top:44px;}
+    main.sheet{padding:34px;}
+    .cal-day{padding:9px;}
+    .cal-day .num{font-size:14px;}
+    .cal-day .mini{font-size:11px;}
+    canvas{max-height:340px;}
+  }
+
+  /* Telefon: aplikacijski izgled s donjom navigacijom */
+  @media (max-width:720px){
+    body{
+      padding:14px 12px calc(86px + env(safe-area-inset-bottom));
+      padding-top:max(14px, env(safe-area-inset-top));
+      padding-left:max(12px, env(safe-area-inset-left));
+      padding-right:max(12px, env(safe-area-inset-right));
+    }
+    header.top{margin-bottom:14px;}
+    header.top h1{font-size:28px;}
+    header.top p{display:none;}
+
+    /* Kartice kao donja traka */
+    nav.tabs{
+      position:fixed;left:0;right:0;bottom:0;margin:0;gap:0;z-index:40;
+      background:rgba(251,251,246,.94);
+      -webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);
+      border-top:1px solid var(--line-strong);
+      padding:6px max(4px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+    }
+    nav.tabs button{
+      flex:1 1 0;min-width:0;min-height:48px;
+      font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:-.01em;
+      background:transparent;border:none;border-radius:10px;box-shadow:none;
+      padding:6px 1px;transform:none;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    nav.tabs button.active{background:rgba(79,107,71,.14);color:var(--moss-deep);box-shadow:none;}
+    main.sheet{border-radius:14px;padding:16px 14px;}
+
+    /* Veće površine za dodir; 16px sprječava iOS auto-zoom na polja */
+    select, input[type=number], input[type=date], input[type=text]{
+      font-size:16px;min-height:46px;padding:10px 12px;border-radius:10px;
+    }
+    input[type=date]{-webkit-appearance:none;appearance:none;text-align:left;display:block;}
+    .btn{font-size:15px;padding:13px 18px;border-radius:10px;min-height:46px;}
+    .field-row{gap:12px;}
+    .field{flex:1 1 100%;}
+    .field label{font-size:12px;}
+    fieldset.form-card{padding:14px 12px 16px;}
+    .settings-row{padding:12px;}
+    button.icon-btn{font-size:17px;padding:8px 10px;}
+    .preset-chip{font-size:13px;padding:6px 8px 6px 14px;}
+    .preset-chip button{font-size:15px;padding:6px 10px;}
+
+    .kcal-ring-section{padding:18px 12px 16px;}
+    .stat-row{gap:10px;}
+    .stat-card{flex:1 1 calc(50% - 10px);padding:10px 12px;}
+    .stat-card .value{font-size:20px;}
+
+    /* Kalendar */
+    .cal-header{margin-bottom:10px;}
+    .cal-nav button{width:44px;height:44px;font-size:20px;border-radius:10px;}
+    .cal-grid{gap:4px;}
+    .cal-day{aspect-ratio:1/1;padding:4px;border-radius:8px;}
+    .cal-day .num{font-size:13px;}
+    .cal-day .mini{font-size:9px;}
+    .cal-day .dot{top:5px;right:5px;}
+    .cal-day .warn-badge{width:14px;height:14px;font-size:9px;top:3px;left:3px;}
+    .receipt{padding:14px 12px;}
+    .receipt .rline{font-size:12.5px;}
+
+    /* Grafovi */
+    .chart-box{padding:12px 10px;}
+    .chart-controls button{padding:8px 12px;font-size:12.5px;}
+    canvas{max-height:240px;}
+
+    .export-actions .btn{flex:1 1 100%;text-align:center;}
+    .toast-msg{bottom:calc(84px + env(safe-area-inset-bottom));max-width:calc(100% - 32px);text-align:center;}
+  }
 </style>
 </head>
 <body>
