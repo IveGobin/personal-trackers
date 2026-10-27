@@ -362,7 +362,9 @@
     select, input[type=number], input[type=date], input[type=text]{
       font-size:16px;min-height:46px;padding:10px 12px;border-radius:10px;
     }
-    input[type=date]{-webkit-appearance:none;appearance:none;text-align:left;display:block;}
+    input[type=date]{-webkit-appearance:none;appearance:none;text-align:left;display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;}
+    input[type=date]::-webkit-date-and-time-value{text-align:left;min-width:0;}
+    .field-row > .field{min-width:0;}
     .btn{font-size:15px;padding:13px 18px;border-radius:10px;min-height:46px;}
     .field-row{gap:12px;}
     .field{flex:1 1 100%;}
