@@ -1,0 +1,14 @@
+{
+  "name": "Dnevnik · prehrana i težina",
+  "short_name": "Dnevnik",
+  "lang": "hr",
+  "start_url": "./dnevnik-prehrane-i-tezine.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF0E6",
+  "theme_color": "#4f6b47",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
