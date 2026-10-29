@@ -694,6 +694,8 @@
         <p style="margin:0 0 10px;font-size:13.5px;color:var(--ink-soft);">Ovo trajno briše sve unose, aktivnosti, težine i postavke iz ovog preglednika.</p>
         <button class="btn brick-btn" id="clearAll">Obriši sve podatke</button>
       </div>
+
+      <p id="appVersion" style="margin:22px 0 0;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);text-align:center;"></p>
     </section>
 
   </main>
@@ -702,6 +704,10 @@
 <div class="toast-msg" id="toastMsg"></div>
 
 <script>
+/* Verzija aplikacije: povećaj kod svake izmjene (vidi CLAUDE.md). */
+const APP_VERSION = '1.0.0';
+document.getElementById('appVersion').textContent = `Verzija ${APP_VERSION}`;
+
 /* ============ DATA LAYER ============ */
 const LS_KEY = 'wt_diary_v1';
 

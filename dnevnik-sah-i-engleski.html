@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Dnevnik · šah i engleski</title>
+<meta name="theme-color" content="#223754">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Šah & EN">
+<link rel="manifest" href="manifest-sah-engleski.json">
+<link rel="apple-touch-icon" href="icons/sah-apple-touch-icon.png">
+<link href="vendor/fonts.css" rel="stylesheet">
+<script src="vendor/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#EFEDE6;
+    --card:#FBFAF6;
+    --ink:#1f2230;
+    --ink-soft:#5a5e6e;
+    --line:#dcd9cc;
+    --line-strong:#bdb9a8;
+    --navy:#2f4a6d;
+    --navy-deep:#223754;
+    --walnut:#7a4a26;
+    --brass:#b5832e;
+    --brick:#a83f30;
+    --daily:#a98458;
+    --rapid:#7a4a26;
+    --blitz:#c4552e;
+    --paper-inv:#f6f4ee;
+    --shadow: 0 1px 0 rgba(31,34,48,0.06), 0 8px 20px -12px rgba(31,34,48,0.25);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent;}
+  button,select,input,label{touch-action:manipulation;}
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(47,74,109,0.08), transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    min-height:100dvh;
+    padding:28px 18px 60px;
+    padding-top:max(28px, env(safe-area-inset-top));
+    padding-left:max(18px, env(safe-area-inset-left));
+    padding-right:max(18px, env(safe-area-inset-right));
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  header.top{margin-bottom:22px;}
+  header.top .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--navy-deep);margin-bottom:6px;
+  }
+  header.top h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:clamp(28px,4vw,38px);
+    margin:0 0 6px;letter-spacing:-0.01em;
+  }
+  header.top p{margin:0;color:var(--ink-soft);font-size:14.5px;max-width:56ch;}
+
+  nav.tabs{display:flex;gap:6px;margin:26px 0 0;position:relative;z-index:2;}
+  nav.tabs button{
+    font-family:'Fraunces',serif;font-size:15px;font-weight:600;
+    background:var(--card);border:1px solid var(--line-strong);border-bottom:none;
+    color:var(--ink-soft);padding:10px 18px 12px;border-radius:10px 10px 0 0;
+    cursor:pointer;transform:translateY(3px);
+    transition:transform .15s ease, color .15s ease;
+  }
+  nav.tabs button.active{color:var(--ink);transform:translateY(0);box-shadow:var(--shadow);}
+  main.sheet{
+    background:var(--card);border:1px solid var(--line-strong);
+    border-radius:0 12px 12px 12px;box-shadow:var(--shadow);
+    padding:26px;position:relative;z-index:1;
+  }
+  section.tabpanel{display:none;}
+  section.tabpanel.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  h2.section-title{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin:0 0 4px;}
+  p.section-hint{margin:0 0 18px;color:var(--ink-soft);font-size:13.5px;}
+  h3.sub-title{font-family:'Fraunces',serif;font-weight:600;font-size:15px;margin:26px 0 10px;}
+
+  .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;}
+  @media(max-width:720px){.grid-2{grid-template-columns:1fr;}}
+
+  /* Stat kartice */
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
+  .stat-card{
+    flex:1 1 140px;background:var(--paper-inv);
+    border:1px dashed var(--line-strong);border-radius:10px;padding:12px 14px;
+  }
+  .stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
+  .stat-card .value{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;margin-top:4px;}
+  .stat-card .value.navy{color:var(--navy-deep);}
+  .stat-card .value.walnut{color:var(--walnut);}
+  .stat-card .value.brass{color:var(--brass);}
+  .stat-card .meta{font-size:11.5px;color:var(--ink-soft);margin-top:4px;font-family:'IBM Plex Mono',monospace;}
+  .goal-bar{height:6px;border-radius:3px;background:#e6e3d8;margin-top:8px;overflow:hidden;}
+  .goal-bar span{display:block;height:100%;border-radius:3px;transition:width .4s ease;}
+
+  /* Forme */
+  fieldset.form-card{border:1px solid var(--line);border-radius:12px;padding:16px 16px 18px;margin:0 0 16px;min-width:0;}
+  fieldset.form-card legend{font-family:'Fraunces',serif;font-weight:600;font-size:14.5px;padding:0 8px;color:var(--navy-deep);}
+  fieldset.form-card.chess legend{color:var(--walnut);}
+  .field-row{display:flex;gap:10px;flex-wrap:wrap;align-items:end;}
+  .field-row + .field-row{margin-top:10px;}
+  .field{display:flex;flex-direction:column;gap:5px;flex:1 1 120px;min-width:0;}
+  .field label, .field .lbl{font-size:11.5px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+  select, input[type=number], input[type=date], input[type=text]{
+    font-family:'Inter',sans-serif;font-size:14px;padding:9px 10px;border-radius:8px;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink);
+    width:100%;min-width:0;box-sizing:border-box;
+  }
+  select:focus, input:focus{outline:2px solid var(--navy);outline-offset:1px;}
+  .btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
+    border:none;border-radius:8px;padding:10px 16px;cursor:pointer;
+    background:var(--navy);color:#fff;
+    transition:background .15s ease, transform .1s ease;display:inline-block;
+  }
+  .btn:hover{background:var(--navy-deep);}
+  .btn:active{transform:scale(.98);}
+  .btn.walnut-btn{background:var(--walnut);}
+  .btn.walnut-btn:hover{background:#5e3818;}
+  .btn.brick-btn{background:var(--brick);}
+  .btn.brick-btn:hover{background:#832f23;}
+  .btn.ghost{background:transparent;border:1px solid var(--line-strong);color:var(--ink);}
+  .btn.ghost:hover{background:var(--paper);}
+  .form-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;}
+  button.icon-btn{background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:14px;padding:2px 6px;border-radius:6px;}
+  button.icon-btn:hover{color:var(--brick);background:rgba(168,63,48,.08);}
+
+  /* Segmentirani odabir (partija/učenje, format, raspon) */
+  .seg{display:flex;gap:2px;background:#fff;border:1px solid var(--line-strong);border-radius:20px;padding:3px;}
+  .seg button{
+    flex:1 1 0;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    background:transparent;border:none;padding:7px 12px;border-radius:16px;
+    cursor:pointer;color:var(--ink-soft);white-space:nowrap;
+  }
+  .seg button.active{background:var(--ink);color:#fff;}
+  .seg.chess button.active{background:var(--walnut);}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;
+    background:var(--paper-inv);border:1px solid var(--line-strong);
+    border-radius:16px;padding:5px 11px;cursor:pointer;color:var(--ink-soft);
+  }
+  .chip:active{background:var(--line);}
+
+  /* Popis zadnjih unosa / dnevni izvod */
+  .receipt{
+    background:var(--paper-inv);border-radius:4px;padding:18px 20px;position:relative;
+    border-top:2px dashed var(--line-strong);border-bottom:2px dashed var(--line-strong);
+  }
+  .receipt h4{font-family:'Fraunces',serif;font-size:16px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;}
+  .receipt h4 small{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);font-weight:400;}
+  .receipt .rline{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;
+    padding:5px 0;border-bottom:1px dotted var(--line-strong);gap:8px;
+  }
+  .receipt .rline > span:first-child{min-width:0;overflow-wrap:anywhere;}
+  .receipt .rline > span:last-child{white-space:nowrap;}
+  .receipt .rline .tag{color:var(--ink-soft);font-family:'Inter',sans-serif;font-size:12px;}
+  .receipt .rline.total{border-bottom:none;border-top:1px solid var(--ink);margin-top:6px;padding-top:8px;font-weight:600;}
+  .receipt .empty-note{color:var(--ink-soft);font-size:13px;font-style:italic;margin:0;}
+  .cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;}
+
+  /* Kalendar */
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-header h3{font-family:'Fraunces',serif;font-size:18px;margin:0;font-weight:600;}
+  .cal-nav button{background:var(--paper-inv);border:1px solid var(--line-strong);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:15px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;}
+  .cal-dow{font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:center;color:var(--ink-soft);padding-bottom:4px;}
+  .cal-day{
+    position:relative;aspect-ratio:1/0.85;border:1px solid var(--line);border-radius:9px;
+    background:var(--paper-inv);cursor:pointer;padding:6px;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:border-color .12s ease, transform .1s ease;
+  }
+  .cal-day:hover{border-color:var(--navy);transform:translateY(-1px);}
+  .cal-day.empty{background:transparent;border:none;cursor:default;}
+  .cal-day.empty:hover{transform:none;}
+  .cal-day.today{border-color:var(--navy);box-shadow:0 0 0 2px rgba(47,74,109,.15) inset;}
+  .cal-day.selected{background:var(--ink) !important;border-color:var(--ink);}
+  .cal-day.selected .num, .cal-day.selected .mini{color:#fff !important;}
+  .cal-day .num{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;}
+  .cal-day .mini{font-size:10px;font-family:'IBM Plex Mono',monospace;line-height:1.25;white-space:nowrap;}
+  .cal-day .mini.c{color:var(--walnut);}
+  .cal-day .mini.e{color:var(--navy-deep);}
+  .legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--ink-soft);}
+
+  /* Godišnja toplinska karta */
+  .heat-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
+  .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);grid-auto-columns:11px;gap:3px;width:max-content;}
+  .heat div{border-radius:2px;background:#e6e3d8;}
+  .heat div.out{background:transparent;}
+  .heat-scale{display:inline-flex;gap:3px;vertical-align:middle;}
+  .heat-scale i{width:11px;height:11px;border-radius:2px;display:inline-block;}
+
+  /* Grafovi */
+  .chart-box{background:var(--paper-inv);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:20px;}
+  .chart-box h3{font-family:'Fraunces',serif;font-size:15px;margin:0 0 12px;font-weight:600;}
+  .chart-box-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+  .chart-box-header h3{margin:0;}
+  canvas{max-height:280px;}
+
+  .export-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+  .danger-zone{margin-top:26px;padding:16px;border:1px dashed var(--brick);border-radius:10px;background:rgba(168,63,48,0.05);}
+  .danger-zone h3{font-family:'Fraunces',serif;font-size:14.5px;color:var(--brick);margin:0 0 8px;}
+  .settings-row{display:flex;gap:14px;flex-wrap:wrap;padding:14px;background:var(--paper-inv);border-radius:10px;border:1px solid var(--line);}
+  .version{margin:22px 0 0;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);text-align:center;}
+
+  .toast-msg{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper-inv);padding:10px 18px;border-radius:20px;
+    font-size:13.5px;font-family:'Inter',sans-serif;box-shadow:var(--shadow);
+    opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;z-index:50;
+  }
+  .toast-msg.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  /* Hover efekti samo na uređajima s mišem (na dodir ostaju "zalijepljeni") */
+  @media (hover:none){
+    .cal-day:hover{border-color:var(--line);transform:none;}
+    .cal-day.today:hover{border-color:var(--navy);}
+    .btn:hover{background:var(--navy);}
+    .btn.walnut-btn:hover{background:var(--walnut);}
+    .btn.brick-btn:hover{background:var(--brick);}
+    .btn.ghost:hover{background:transparent;}
+  }
+
+  @media (min-width:1000px){
+    body{padding-top:44px;}
+    main.sheet{padding:34px;}
+    .cal-day{padding:9px;}
+    .cal-day .num{font-size:14px;}
+    .cal-day .mini{font-size:11px;}
+    canvas{max-height:340px;}
+  }
+
+  /* Telefon: aplikacijski izgled s donjom navigacijom */
+  @media (max-width:720px){
+    body{
+      padding:14px 12px calc(86px + env(safe-area-inset-bottom));
+      padding-top:max(14px, env(safe-area-inset-top));
+      padding-left:max(12px, env(safe-area-inset-left));
+      padding-right:max(12px, env(safe-area-inset-right));
+    }
+    header.top{margin-bottom:14px;}
+    header.top h1{font-size:28px;}
+    header.top p{display:none;}
+
+    nav.tabs{
+      position:fixed;left:0;right:0;bottom:0;margin:0;gap:0;z-index:40;
+      background:rgba(251,250,246,.94);
+      -webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);
+      border-top:1px solid var(--line-strong);
+      padding:6px max(4px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+    }
+    nav.tabs button{
+      flex:1 1 0;min-width:0;min-height:48px;
+      font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
+      background:transparent;border:none;border-radius:10px;box-shadow:none;
+      padding:6px 1px;transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    nav.tabs button.active{background:rgba(47,74,109,.14);color:var(--navy-deep);box-shadow:none;}
+    main.sheet{border-radius:14px;padding:16px 14px;}
+
+    /* 16px sprječava iOS auto-zoom na polja */
+    select, input[type=number], input[type=date], input[type=text]{
+      font-size:16px;min-height:46px;padding:10px 12px;border-radius:10px;
+    }
+    input[type=date]{-webkit-appearance:none;appearance:none;text-align:left;display:block;width:100%;min-width:0;max-width:100%;}
+    input[type=date]::-webkit-date-and-time-value{text-align:left;min-width:0;}
+    .btn{font-size:15px;padding:13px 18px;border-radius:10px;min-height:46px;}
+    .form-actions .btn{flex:1 1 100%;}
+    .field-row{gap:12px;}
+    .field-row + .field-row{margin-top:12px;}
+    .field{flex:1 1 calc(50% - 6px);}
+    .field.wide{flex:1 1 100%;}
+    .field label, .field .lbl{font-size:12px;}
+    fieldset.form-card{padding:14px 12px 16px;}
+    .seg button{padding:11px 8px;font-size:13px;}
+    .chip{font-size:13.5px;padding:9px 14px;border-radius:18px;}
+    button.icon-btn{font-size:17px;padding:8px 10px;}
+
+    .stat-row{gap:10px;}
+    .stat-card{flex:1 1 calc(50% - 10px);padding:10px 12px;}
+    .stat-card .value{font-size:19px;}
+
+    .cal-header{margin-bottom:10px;}
+    .cal-nav button{width:44px;height:44px;font-size:20px;border-radius:10px;}
+    .cal-grid{gap:4px;}
+    .cal-day{aspect-ratio:1/1.05;padding:4px;border-radius:8px;}
+    .cal-day .num{font-size:12.5px;}
+    .cal-day .mini{font-size:9px;}
+    .receipt{padding:14px 12px;}
+    .receipt .rline{font-size:12.5px;}
+
+    .chart-box{padding:12px 10px;}
+    canvas{max-height:240px;}
+
+    .export-actions .btn{flex:1 1 100%;text-align:center;}
+    .toast-msg{bottom:calc(84px + env(safe-area-inset-bottom));max-width:calc(100% - 32px);text-align:center;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Osobni dnevnik · lokalno, bez interneta</div>
+    <h1>Šah &amp; engleski</h1>
+    <p>Bilježi partije, učenje šaha i razgovore na engleskom. Kalendar i statistika pokazuju koliko vremena na to trošiš kroz tjedne, mjesece i godine.</p>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="unos" class="active">Unos</button>
+    <button data-tab="kalendar">Kalendar</button>
+    <button data-tab="statistika">Statistika</button>
+    <button data-tab="izvoz">Izvoz</button>
+  </nav>
+
+  <main class="sheet">
+
+    <!-- ===================== UNOS ===================== -->
+    <section class="tabpanel active" id="tab-unos">
+      <h2 class="section-title">Ovaj tjedan</h2>
+      <p class="section-hint">Od ponedjeljka do danas.</p>
+
+      <div class="stat-row" id="weekStats"></div>
+
+      <div class="grid-2">
+        <fieldset class="form-card chess" id="chessForm">
+          <legend>Šah</legend>
+          <div class="seg chess" id="chessMode">
+            <button data-mode="partija" class="active">Partija</button>
+            <button data-mode="ucenje">Učenje</button>
+          </div>
+
+          <div id="gameFields" style="margin-top:14px;">
+            <div class="field-row">
+              <div class="field wide">
+                <span class="lbl">Vrsta partije</span>
+                <div class="seg chess" id="gameFormat">
+                  <button data-format="daily">Daily</button>
+                  <button data-format="rapid" class="active">Rapid</button>
+                  <button data-format="blitz">Blitz</button>
+                </div>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="gameCount">Broj partija</label>
+                <input type="number" id="gameCount" min="1" step="1" value="1" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="gameMin">Ukupno minuta</label>
+                <input type="number" id="gameMin" min="1" step="1" inputmode="numeric">
+              </div>
+            </div>
+          </div>
+
+          <div id="learnFields" style="margin-top:14px;display:none;">
+            <div class="field-row">
+              <div class="field">
+                <label for="learnMin">Minuta</label>
+                <input type="number" id="learnMin" min="1" step="1" placeholder="npr. 30" inputmode="numeric">
+              </div>
+            </div>
+            <div class="chips" data-min-for="learnMin"></div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="chessDate">Datum</label>
+              <input type="date" id="chessDate">
+            </div>
+            <div class="field">
+              <label for="chessNote">Napomena (opcionalno)</label>
+              <input type="text" id="chessNote" list="chessNotes" placeholder="npr. taktike, otvaranja">
+              <datalist id="chessNotes"></datalist>
+            </div>
+          </div>
+          <div class="form-actions"><button class="btn walnut-btn" id="addChess">Dodaj partiju</button></div>
+        </fieldset>
+
+        <fieldset class="form-card">
+          <legend>Engleski · razgovor</legend>
+          <div class="field-row">
+            <div class="field">
+              <label for="engMin">Minuta</label>
+              <input type="number" id="engMin" min="1" step="1" placeholder="npr. 45" inputmode="numeric">
+            </div>
+          </div>
+          <div class="chips" data-min-for="engMin"></div>
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field">
+              <label for="engDate">Datum</label>
+              <input type="date" id="engDate">
+            </div>
+            <div class="field">
+              <label for="engNote">S kim / tema (opcionalno)</label>
+              <input type="text" id="engNote" list="engNotes" placeholder="npr. tutor, posao">
+              <datalist id="engNotes"></datalist>
+            </div>
+          </div>
+          <div class="form-actions"><button class="btn" id="addEng">Dodaj razgovor</button></div>
+        </fieldset>
+      </div>
+
+      <h3 class="sub-title">Zadnji unosi</h3>
+      <div class="receipt" id="recentList"></div>
+
+      <h3 class="sub-title">Postavke</h3>
+      <div class="settings-row">
+        <div class="field">
+          <label for="setGoalChess">Tjedni cilj · šah (min)</label>
+          <input type="number" id="setGoalChess" min="0" step="10" placeholder="npr. 300" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="setGoalEng">Tjedni cilj · engleski (min)</label>
+          <input type="number" id="setGoalEng" min="0" step="10" placeholder="npr. 180" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="setDaily">Min / daily partija</label>
+          <input type="number" id="setDaily" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="setRapid">Min / rapid partija</label>
+          <input type="number" id="setRapid" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="setBlitz">Min / blitz partija</label>
+          <input type="number" id="setBlitz" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="field" style="justify-content:flex-end;">
+          <button class="btn ghost" id="saveSettings">Spremi postavke</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== KALENDAR ===================== -->
+    <section class="tabpanel" id="tab-kalendar">
+      <h2 class="section-title">Povijest po danima</h2>
+      <p class="section-hint">Dodirni dan da vidiš sve unose tog dana. Tamnija pozadina znači više vremena.</p>
+
+      <div class="cal-header">
+        <div class="cal-nav"><button id="calPrev">‹</button></div>
+        <h3 id="calLabel">—</h3>
+        <div class="cal-nav"><button id="calNext">›</button></div>
+      </div>
+      <div class="cal-grid" id="calDow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:6px;"></div>
+      <div class="legend">
+        <span><span class="cat-dot" style="background:var(--walnut)"></span>♞ šah (min)</span>
+        <span><span class="cat-dot" style="background:var(--navy)"></span>EN engleski (min)</span>
+      </div>
+
+      <div class="receipt" id="dayReceipt" style="display:none;margin-top:20px;"></div>
+    </section>
+
+    <!-- ===================== STATISTIKA ===================== -->
+    <section class="tabpanel" id="tab-statistika">
+      <h2 class="section-title">Kroz duži period</h2>
+      <p class="section-hint">Ukupno vrijeme, partije po vrsti i kretanje po tjednima ili mjesecima.</p>
+
+      <div class="chart-box">
+        <div class="chart-box-header">
+          <h3>Zadnjih godinu dana</h3>
+          <div class="seg" id="heatCat">
+            <button data-cat="sve" class="active">Sve</button>
+            <button data-cat="sah">Šah</button>
+            <button data-cat="engleski">Engleski</button>
+          </div>
+        </div>
+        <div class="heat-scroll" id="heatScroll"><div class="heat" id="heatGrid"></div></div>
+        <div class="legend" id="heatLegend"></div>
+      </div>
+
+      <div class="chart-box-header" style="margin:6px 0 14px;">
+        <h3 class="sub-title" style="margin:0;">Razdoblje</h3>
+        <div class="seg" id="rangeButtons">
+          <button data-range="12w" class="active">12 tj</button>
+          <button data-range="26w">6 mj</button>
+          <button data-range="12m">1 god</button>
+          <button data-range="all">Sve</button>
+        </div>
+      </div>
+
+      <div class="stat-row" id="rangeStats"></div>
+
+      <div class="chart-box">
+        <h3 id="timeChartTitle">Vrijeme po tjednu (sati)</h3>
+        <p class="chart-msg" style="display:none;color:var(--ink-soft);font-size:13px;margin:0;"></p>
+        <canvas id="timeChart"></canvas>
+      </div>
+
+      <div class="chart-box">
+        <h3 id="gamesChartTitle">Partije po tjednu</h3>
+        <canvas id="gamesChart"></canvas>
+      </div>
+
+      <div class="receipt" id="chessBreakdown"></div>
+    </section>
+
+    <!-- ===================== IZVOZ ===================== -->
+    <section class="tabpanel" id="tab-izvoz">
+      <h2 class="section-title">Izvoz i uvoz podataka</h2>
+      <p class="section-hint">Svi podaci žive lokalno u ovom pregledniku (localStorage). Redovito izvezi backup ako mijenjaš uređaj ili čistiš podatke preglednika.</p>
+
+      <div class="export-actions">
+        <button class="btn" id="exportJson">Izvezi JSON</button>
+        <button class="btn walnut-btn" id="exportCsv">Izvezi CSV</button>
+        <label class="btn ghost" style="cursor:pointer;">
+          Uvezi JSON backup
+          <input type="file" id="importFile" accept="application/json" style="display:none;">
+        </label>
+      </div>
+
+      <div class="danger-zone">
+        <h3>Opasna zona</h3>
+        <p style="margin:0 0 10px;font-size:13.5px;color:var(--ink-soft);">Ovo trajno briše sve partije, učenje, razgovore i postavke iz ovog preglednika.</p>
+        <button class="btn brick-btn" id="clearAll">Obriši sve podatke</button>
+      </div>
+
+      <p class="version" id="appVersion"></p>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast-msg" id="toastMsg"></div>
+
+<script>
+/* Verzija aplikacije: povećaj kod svake izmjene (vidi CLAUDE.md). */
+const APP_VERSION = '1.1.0';
+
+/* ============ DATA LAYER ============ */
+const LS_KEY = 'chess_english_v1';
+const DEFAULT_GAME_MIN = { daily:10, rapid:25, blitz:8 };
+const FORMAT_LABELS = { daily:'Daily', rapid:'Rapid', blitz:'Blitz' };
+const COLORS = { partija:'#7a4a26', ucenje:'#b5832e', engleski:'#2f4a6d', daily:'#a98458', rapid:'#7a4a26', blitz:'#c4552e' };
+
+function emptyState(){
+  return { entries:[], settings:{ goalChess:null, goalEng:null, gameMin:{ ...DEFAULT_GAME_MIN } } };
+}
+function normalize(s){
+  if(!Array.isArray(s.entries)) s.entries = [];
+  if(!s.settings) s.settings = {};
+  s.settings.gameMin = { ...DEFAULT_GAME_MIN, ...(s.settings.gameMin || {}) };
+  delete s.timer; // ostatak štoperice iz verzije 1.0.0
+  return s;
+}
+function loadData(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) return normalize(JSON.parse(raw));
+  }catch(e){ console.warn('Greška pri čitanju localStorage', e); }
+  return emptyState();
+}
+function saveData(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+let state = loadData();
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+// Lokalni datum (toISOString bi između ponoći i 2h vratio jučerašnji dan)
+function isoDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function todayStr(){ return isoDate(new Date()); }
+function parseIso(iso){ return new Date(iso+'T00:00:00'); }
+function addDays(iso, n){ const d = parseIso(iso); d.setDate(d.getDate()+n); return isoDate(d); }
+function weekStart(iso){ const d = parseIso(iso); d.setDate(d.getDate() - (d.getDay()+6)%7); return isoDate(d); }
+function monthStart(iso){ return iso.slice(0,7) + '-01'; }
+function fmtDateHr(iso){
+  return parseIso(iso).toLocaleDateString('hr-HR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function fmtAxisDate(iso){
+  const d = parseIso(iso);
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.`;
+}
+function fmtDur(min){
+  min = Math.round(min);
+  if(min < 60) return `${min} min`;
+  const h = Math.floor(min/60), m = min%60;
+  if(h >= 100 || m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+}
+function sumMin(list){ return list.reduce((s,e)=>s+e.minutes,0); }
+function sumGames(list){ return list.reduce((s,e)=>s+(e.type==='partija' ? e.games : 0),0); }
+function inRange(e, from, to){ return e.date >= from && e.date <= to; }
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function showToast(msg){
+  const el = document.getElementById('toastMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+// 1 partija, 2–4 partije, 5+ partija (11–14 partija, 21 partija, 22 partije...)
+function gamesWord(n){
+  const d = n % 10, dd = n % 100;
+  return d >= 2 && d <= 4 && !(dd >= 12 && dd <= 14) ? 'partije' : 'partija';
+}
+
+function entryLabel(e){
+  if(e.type === 'partija') return `${FORMAT_LABELS[e.format]} · ${e.games} ${gamesWord(e.games)}`;
+  if(e.type === 'ucenje') return 'Šah · učenje';
+  return 'Engleski · razgovor';
+}
+function entryColor(e){ return e.type === 'partija' ? COLORS[e.format] : COLORS[e.type]; }
+
+/* ============ TABS ============ */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('section.tabpanel').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'kalendar') renderCalendar();
+    if(btn.dataset.tab === 'statistika') renderStats();
+  });
+});
+
+// Segmentirani odabir: vraća trenutnu vrijednost i javlja promjenu.
+function bindSeg(id, attr, onChange){
+  const el = document.getElementById(id);
+  el.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    el.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b === btn));
+    onChange && onChange(btn.dataset[attr]);
+  });
+}
+function segValue(id, attr){ return document.querySelector(`#${id} button.active`).dataset[attr]; }
+function setSeg(id, attr, value){
+  document.querySelectorAll(`#${id} button`).forEach(b=>b.classList.toggle('active', b.dataset[attr] === value));
+}
+
+/* ============ UNOS ============ */
+document.getElementById('chessDate').value = todayStr();
+document.getElementById('engDate').value = todayStr();
+
+document.querySelectorAll('.chips[data-min-for]').forEach(box=>{
+  box.innerHTML = [15,30,45,60,90].map(m=>`<button type="button" class="chip" data-min="${m}">${m} min</button>`).join('');
+  box.addEventListener('click', (e)=>{
+    const chip = e.target.closest('.chip');
+    if(chip) document.getElementById(box.dataset.minFor).value = chip.dataset.min;
+  });
+});
+
+// Minute partije se same predlažu (broj × zadano trajanje) dok ih korisnik ručno ne promijeni.
+let gameMinTouched = false;
+function suggestGameMin(){
+  if(gameMinTouched) return;
+  const count = Math.max(1, parseInt(document.getElementById('gameCount').value) || 1);
+  document.getElementById('gameMin').value = state.settings.gameMin[segValue('gameFormat','format')] * count;
+}
+document.getElementById('gameMin').addEventListener('input', ()=>{ gameMinTouched = true; });
+document.getElementById('gameCount').addEventListener('input', suggestGameMin);
+bindSeg('gameFormat', 'format', suggestGameMin);
+
+function setChessMode(mode){
+  setSeg('chessMode', 'mode', mode);
+  document.getElementById('gameFields').style.display = mode === 'partija' ? 'block' : 'none';
+  document.getElementById('learnFields').style.display = mode === 'ucenje' ? 'block' : 'none';
+  document.getElementById('addChess').textContent = mode === 'partija' ? 'Dodaj partiju' : 'Dodaj učenje';
+}
+bindSeg('chessMode', 'mode', setChessMode);
+
+document.getElementById('addChess').addEventListener('click', ()=>{
+  const mode = segValue('chessMode','mode');
+  const date = document.getElementById('chessDate').value || todayStr();
+  const note = document.getElementById('chessNote').value.trim();
+  if(mode === 'partija'){
+    const games = parseInt(document.getElementById('gameCount').value);
+    const minutes = parseFloat(document.getElementById('gameMin').value);
+    if(!games || games < 1){ showToast('Unesi broj partija.'); return; }
+    if(!minutes || minutes <= 0){ showToast('Unesi trajanje u minutama.'); return; }
+    state.entries.push({ id:uid(), ts:Date.now(), date, cat:'sah', type:'partija', format:segValue('gameFormat','format'), games, minutes, note });
+    document.getElementById('gameCount').value = 1;
+    gameMinTouched = false;
+    suggestGameMin();
+    showToast(games === 1 ? 'Partija dodana.' : `Dodano: ${games} ${gamesWord(games)}.`);
+  } else {
+    const minutes = parseFloat(document.getElementById('learnMin').value);
+    if(!minutes || minutes <= 0){ showToast('Unesi trajanje učenja u minutama.'); return; }
+    state.entries.push({ id:uid(), ts:Date.now(), date, cat:'sah', type:'ucenje', minutes, note });
+    document.getElementById('learnMin').value = '';
+    showToast('Učenje dodano.');
+  }
+  document.getElementById('chessNote').value = '';
+  saveData();
+  renderAfterChange();
+});
+
+document.getElementById('addEng').addEventListener('click', ()=>{
+  const minutes = parseFloat(document.getElementById('engMin').value);
+  const date = document.getElementById('engDate').value || todayStr();
+  if(!minutes || minutes <= 0){ showToast('Unesi trajanje razgovora u minutama.'); return; }
+  state.entries.push({ id:uid(), ts:Date.now(), date, cat:'engleski', type:'engleski', minutes, note:document.getElementById('engNote').value.trim() });
+  saveData();
+  document.getElementById('engMin').value = '';
+  document.getElementById('engNote').value = '';
+  renderAfterChange();
+  showToast('Razgovor dodan.');
+});
+
+function deleteEntry(id){
+  state.entries = state.entries.filter(e=>e.id !== id);
+  saveData();
+  renderAfterChange();
+  showToast('Unos obrisan.');
+}
+
+function renderAfterChange(){
+  renderWeek();
+  renderRecent();
+  renderNoteLists();
+  renderCalendar();
+}
+
+function renderNoteLists(){
+  const fill = (id, type) => {
+    const notes = [...new Set(state.entries.filter(e=>(type ? e.type===type : e.cat==='sah') && e.note).map(e=>e.note))];
+    document.getElementById(id).innerHTML = notes.slice(-30).map(n=>`<option value="${escapeHtml(n)}">`).join('');
+  };
+  fill('chessNotes', null);
+  fill('engNotes', 'engleski');
+}
+
+/* ============ OVAJ TJEDAN ============ */
+function streakDays(){
+  const days = new Set(state.entries.map(e=>e.date));
+  let d = todayStr();
+  if(!days.has(d)) d = addDays(d, -1); // današnji dan se još može upisati
+  let n = 0;
+  while(days.has(d)){ n++; d = addDays(d, -1); }
+  return n;
+}
+
+function goalBar(value, goal, color){
+  if(!goal) return '';
+  const pct = Math.min(100, Math.round(value/goal*100));
+  return `<div class="goal-bar"><span style="width:${pct}%;background:${color};"></span></div><div class="meta">${pct}% od ${fmtDur(goal)}</div>`;
+}
+
+function renderWeek(){
+  const from = weekStart(todayStr()), to = todayStr();
+  const week = state.entries.filter(e=>inRange(e, from, to));
+  const chess = week.filter(e=>e.cat==='sah');
+  const eng = week.filter(e=>e.cat==='engleski');
+  const chessMin = sumMin(chess), engMin = sumMin(eng);
+  const byFormat = f => chess.filter(e=>e.format===f).reduce((s,e)=>s+e.games,0);
+  const learnMin = sumMin(chess.filter(e=>e.type==='ucenje'));
+  const streak = streakDays();
+
+  document.getElementById('weekStats').innerHTML = `
+    <div class="stat-card"><div class="label">Šah</div><div class="value walnut">${fmtDur(chessMin)}</div>
+      <div class="meta">od toga učenje ${fmtDur(learnMin)}</div>${goalBar(chessMin, state.settings.goalChess, COLORS.partija)}</div>
+    <div class="stat-card"><div class="label">Engleski</div><div class="value navy">${fmtDur(engMin)}</div>
+      <div class="meta">${eng.length} ${eng.length === 1 ? 'razgovor' : 'razgovora'}</div>${goalBar(engMin, state.settings.goalEng, COLORS.engleski)}</div>
+    <div class="stat-card"><div class="label">Partije</div><div class="value">${sumGames(chess)}</div>
+      <div class="meta">D ${byFormat('daily')} · R ${byFormat('rapid')} · B ${byFormat('blitz')}</div></div>
+    <div class="stat-card"><div class="label">Niz dana</div><div class="value brass">${streak}</div>
+      <div class="meta">${streak === 1 ? 'dan' : 'dana'} zaredom s unosom</div></div>
+  `;
+}
+
+/* ============ ZADNJI UNOSI ============ */
+function entryLine(e, withDate){
+  const dateTag = withDate ? `<span class="tag">${fmtAxisDate(e.date)}</span> ` : '';
+  return `<div class="rline">
+    <span>${dateTag}<span class="cat-dot" style="background:${entryColor(e)}"></span>${entryLabel(e)}${e.note ? ` <span class="tag">(${escapeHtml(e.note)})</span>` : ''}</span>
+    <span>${fmtDur(e.minutes)} <button class="icon-btn" data-del="${e.id}" title="Obriši">✕</button></span>
+  </div>`;
+}
+function bindDeletes(root){
+  root.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(confirm('Obrisati ovaj unos?')) deleteEntry(btn.dataset.del);
+    });
+  });
+}
+
+function renderRecent(){
+  const box = document.getElementById('recentList');
+  const recent = [...state.entries].sort((a,b)=> b.date.localeCompare(a.date) || (b.ts||0)-(a.ts||0)).slice(0,8);
+  box.innerHTML = recent.length
+    ? recent.map(e=>entryLine(e, true)).join('')
+    : '<p class="empty-note">Još nema unosa. Dodaj prvu partiju, učenje ili razgovor iznad.</p>';
+  bindDeletes(box);
+}
+
+/* ============ POSTAVKE ============ */
+function fillSettings(){
+  const s = state.settings;
+  document.getElementById('setGoalChess').value = s.goalChess ?? '';
+  document.getElementById('setGoalEng').value = s.goalEng ?? '';
+  document.getElementById('setDaily').value = s.gameMin.daily;
+  document.getElementById('setRapid').value = s.gameMin.rapid;
+  document.getElementById('setBlitz').value = s.gameMin.blitz;
+}
+document.getElementById('saveSettings').addEventListener('click', ()=>{
+  const num = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) || v <= 0 ? null : v; };
+  state.settings.goalChess = num('setGoalChess');
+  state.settings.goalEng = num('setGoalEng');
+  state.settings.gameMin = {
+    daily: num('setDaily') ?? DEFAULT_GAME_MIN.daily,
+    rapid: num('setRapid') ?? DEFAULT_GAME_MIN.rapid,
+    blitz: num('setBlitz') ?? DEFAULT_GAME_MIN.blitz
+  };
+  saveData();
+  fillSettings();
+  suggestGameMin();
+  renderWeek();
+  showToast('Postavke spremljene.');
+});
+
+/* ============ KALENDAR ============ */
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selectedDate = null;
+document.getElementById('calDow').innerHTML = ['Pon','Uto','Sri','Čet','Pet','Sub','Ned'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+document.getElementById('calPrev').addEventListener('click', ()=>{
+  calMonth--; if(calMonth<0){ calMonth=11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', ()=>{
+  calMonth++; if(calMonth>11){ calMonth=0; calYear++; }
+  renderCalendar();
+});
+
+function renderCalendar(){
+  const label = new Date(calYear, calMonth, 1).toLocaleDateString('hr-HR', { month:'long', year:'numeric' });
+  document.getElementById('calLabel').textContent = label.charAt(0).toUpperCase()+label.slice(1);
+
+  const firstDow = (new Date(calYear, calMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const todayIso = todayStr();
+
+  let html = '';
+  for(let i=0;i<firstDow;i++) html += `<div class="cal-day empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayE = state.entries.filter(e=>e.date===iso);
+    const chessMin = sumMin(dayE.filter(e=>e.cat==='sah'));
+    const engMin = sumMin(dayE.filter(e=>e.cat==='engleski'));
+    const classes = ['cal-day'];
+    if(iso===todayIso) classes.push('today');
+    if(iso===selectedDate) classes.push('selected');
+    // Intenzitet pozadine raste s ukupnim vremenom (puni ton na 2 h).
+    const total = chessMin + engMin;
+    const tint = total ? `style="background:rgba(47,74,109,${(0.06 + Math.min(total,120)/120*0.22).toFixed(3)});"` : '';
+    html += `<div class="${classes.join(' ')}" data-date="${iso}" ${tint}>
+      <div class="num">${d}</div>
+      <div>
+        ${chessMin ? `<div class="mini c">♞${Math.round(chessMin)}</div>` : ''}
+        ${engMin ? `<div class="mini e">EN${Math.round(engMin)}</div>` : ''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+  document.querySelectorAll('#calGrid .cal-day[data-date]').forEach(cell=>{
+    cell.addEventListener('click', ()=>{
+      selectedDate = cell.dataset.date;
+      renderCalendar();
+    });
+  });
+  if(selectedDate) renderDayReceipt(selectedDate);
+}
+
+function renderDayReceipt(iso){
+  const panel = document.getElementById('dayReceipt');
+  panel.style.display = 'block';
+  const dayE = state.entries.filter(e=>e.date===iso).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const chessMin = sumMin(dayE.filter(e=>e.cat==='sah'));
+  const engMin = sumMin(dayE.filter(e=>e.cat==='engleski'));
+  panel.innerHTML = `
+    <h4><span>${fmtDateHr(iso)}</span><small>dnevni izvod</small></h4>
+    ${dayE.length ? dayE.map(e=>entryLine(e, false)).join('') : '<p class="empty-note">Nema unosa za ovaj dan.</p>'}
+    ${dayE.length ? `<div class="rline total"><span>Šah ${fmtDur(chessMin)} · engleski ${fmtDur(engMin)}</span><span>${fmtDur(chessMin+engMin)}</span></div>` : ''}
+  `;
+  bindDeletes(panel);
+}
+
+/* ============ STATISTIKA ============ */
+let currentRange = '12w';
+let heatCat = 'sve';
+let timeChartInstance = null;
+let gamesChartInstance = null;
+
+bindSeg('rangeButtons', 'range', (r)=>{ currentRange = r; renderRangeStats(); });
+bindSeg('heatCat', 'cat', (c)=>{ heatCat = c; renderHeatmap(); });
+
+function renderStats(){
+  renderHeatmap();
+  renderRangeStats();
+}
+
+function renderHeatmap(){
+  const color = heatCat === 'sah' ? '122,74,38' : heatCat === 'engleski' ? '47,74,109' : '31,34,48';
+  const levels = [[1,'0.25'],[16,'0.45'],[31,'0.7'],[61,'1']]; // minute od kojih kreće pojedina razina
+  const levelOf = m => { let a = null; levels.forEach(([min,alpha])=>{ if(m >= min) a = alpha; }); return a; };
+
+  const minByDay = {};
+  state.entries.forEach(e=>{
+    if(heatCat !== 'sve' && e.cat !== heatCat) return;
+    minByDay[e.date] = (minByDay[e.date] || 0) + e.minutes;
+  });
+
+  const today = todayStr();
+  const start = weekStart(addDays(today, -364));
+  let html = '';
+  for(let d = start; d <= addDays(weekStart(today), 6); d = addDays(d, 1)){
+    if(d > today){ html += '<div class="out"></div>'; continue; }
+    const m = minByDay[d] || 0;
+    const a = levelOf(m);
+    html += `<div title="${fmtDateHr(d)}: ${fmtDur(m)}"${a ? ` style="background:rgba(${color},${a})"` : ''}></div>`;
+  }
+  document.getElementById('heatGrid').innerHTML = html;
+  const sc = document.getElementById('heatScroll');
+  sc.scrollLeft = sc.scrollWidth;
+
+  const yearMin = Object.entries(minByDay).filter(([d])=>d >= addDays(today,-364)).reduce((s,[,m])=>s+m,0);
+  const activeDays = Object.keys(minByDay).filter(d=>d >= addDays(today,-364)).length;
+  document.getElementById('heatLegend').innerHTML = `
+    <span>manje <span class="heat-scale"><i style="background:#e6e3d8"></i>${levels.map(([,a])=>`<i style="background:rgba(${color},${a})"></i>`).join('')}</span> više</span>
+    <span>${fmtDur(yearMin)} u ${activeDays} ${activeDays === 1 ? 'dan' : 'dana'}</span>
+  `;
+}
+
+// Vraća kante (tjedne ili mjesece) za odabrano razdoblje.
+function rangeBuckets(){
+  const today = todayStr();
+  let unit, count;
+  if(currentRange === '12w'){ unit = 'week'; count = 12; }
+  else if(currentRange === '26w'){ unit = 'week'; count = 26; }
+  else if(currentRange === '12m'){ unit = 'month'; count = 12; }
+  else {
+    const first = state.entries.reduce((m,e)=> e.date < m ? e.date : m, today);
+    const weeks = Math.round((parseIso(weekStart(today)) - parseIso(weekStart(first))) / (7*864e5)) + 1;
+    if(weeks <= 26){ unit = 'week'; count = Math.max(weeks, 4); }
+    else {
+      const f = parseIso(first), t = parseIso(today);
+      unit = 'month'; count = (t.getFullYear()-f.getFullYear())*12 + (t.getMonth()-f.getMonth()) + 1;
+    }
+  }
+  const buckets = [];
+  if(unit === 'week'){
+    let s = addDays(weekStart(today), -7*(count-1));
+    for(let i=0;i<count;i++){ buckets.push({ from:s, to:addDays(s,6), label:fmtAxisDate(s) }); s = addDays(s,7); }
+  } else {
+    const t = parseIso(today);
+    for(let i=count-1;i>=0;i--){
+      const m = new Date(t.getFullYear(), t.getMonth()-i, 1);
+      const end = new Date(m.getFullYear(), m.getMonth()+1, 0);
+      const label = m.toLocaleDateString('hr-HR', { month:'short' }).replace('.','') + ' ' + String(m.getFullYear()).slice(2);
+      buckets.push({ from:isoDate(m), to:isoDate(end), label });
+    }
+  }
+  return { unit, buckets };
+}
+
+function renderRangeStats(){
+  const { unit, buckets } = rangeBuckets();
+  const from = buckets[0].from, to = todayStr();
+  const list = state.entries.filter(e=>inRange(e, from, to));
+  const chess = list.filter(e=>e.cat==='sah');
+  const eng = list.filter(e=>e.cat==='engleski');
+  const weeks = Math.max(1, (parseIso(to) - parseIso(from) + 864e5) / (7*864e5));
+
+  document.getElementById('rangeStats').innerHTML = `
+    <div class="stat-card"><div class="label">Šah ukupno</div><div class="value walnut">${fmtDur(sumMin(chess))}</div>
+      <div class="meta">${fmtDur(sumMin(chess)/weeks)} / tjedan</div></div>
+    <div class="stat-card"><div class="label">Engleski ukupno</div><div class="value navy">${fmtDur(sumMin(eng))}</div>
+      <div class="meta">${fmtDur(sumMin(eng)/weeks)} / tjedan</div></div>
+    <div class="stat-card"><div class="label">Partije</div><div class="value">${sumGames(chess)}</div>
+      <div class="meta">${(sumGames(chess)/weeks).toFixed(1).replace('.',',')} / tjedan</div></div>
+    <div class="stat-card"><div class="label">Aktivni dani</div><div class="value brass">${new Set(list.map(e=>e.date)).size}</div>
+      <div class="meta">od ${fmtDateHr(from)}</div></div>
+  `;
+
+  renderBreakdown(chess, from);
+  renderCharts(unit, buckets);
+}
+
+function renderBreakdown(chess, from){
+  const row = (color, label, items, showGames) => {
+    const g = sumGames(items);
+    return `<div class="rline"><span><span class="cat-dot" style="background:${color}"></span>${label}${showGames ? ` <span class="tag">(${g} ${gamesWord(g)})</span>` : ''}</span><span>${fmtDur(sumMin(items))}</span></div>`;
+  };
+  const games = chess.filter(e=>e.type==='partija');
+  document.getElementById('chessBreakdown').innerHTML = `
+    <h4><span>Raspodjela šaha</span><small>od ${fmtDateHr(from)}</small></h4>
+    ${['daily','rapid','blitz'].map(f=>row(COLORS[f], FORMAT_LABELS[f], games.filter(e=>e.format===f), true)).join('')}
+    ${row(COLORS.ucenje, 'Učenje', chess.filter(e=>e.type==='ucenje'), false)}
+    <div class="rline total"><span>Ukupno</span><span>${fmtDur(sumMin(chess))}</span></div>
+  `;
+}
+
+function renderCharts(unit, buckets){
+  if(typeof Chart === 'undefined'){
+    document.querySelectorAll('#tab-statistika .chart-msg').forEach(p=>{
+      p.style.display = 'block';
+      p.textContent = 'Graf se nije mogao učitati: biblioteka Chart.js nije dostupna.';
+    });
+    return;
+  }
+  // Chart.js mjeri oznake osi trenutnim fontom; ako se IBM Plex Mono još učitava, oznake ispadnu odrezane.
+  if(document.fonts && document.fonts.status !== 'loaded'){
+    document.fonts.ready.then(()=>renderCharts(unit, buckets));
+  }
+  const per = unit === 'week' ? 'tjednu' : 'mjesecu';
+  document.getElementById('timeChartTitle').textContent = `Vrijeme po ${per} (sati)`;
+  document.getElementById('gamesChartTitle').textContent = `Partije po ${per}`;
+
+  const pick = (b, fn) => state.entries.filter(e=>inRange(e, b.from, b.to) && fn(e));
+  const hours = fn => buckets.map(b => +(sumMin(pick(b, fn))/60).toFixed(2));
+  const games = f => buckets.map(b => sumGames(pick(b, e=>e.format===f)));
+  const labels = buckets.map(b=>b.label);
+  const isNarrow = window.innerWidth < 560;
+  const tick = { font:{ family:'IBM Plex Mono', size: isNarrow ? 10 : 12 } };
+  const xScale = { stacked:true, grid:{ display:false }, ticks:{ ...tick, autoSkip:true, autoSkipPadding:12, maxRotation:0 } };
+  const common = {
+    responsive:true,
+    events:[],
+    layout:{ padding:{ left:6 } },
+    plugins:{ legend:{ position:'bottom', labels:{ font:{ family:'Inter' }, boxWidth:12 } }, tooltip:{ enabled:false } }
+  };
+
+  if(timeChartInstance) timeChartInstance.destroy();
+  timeChartInstance = new Chart(document.getElementById('timeChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Partije', data:hours(e=>e.type==='partija'), backgroundColor:COLORS.partija, stack:'sah', borderRadius:2 },
+      { label:'Učenje šaha', data:hours(e=>e.type==='ucenje'), backgroundColor:COLORS.ucenje, stack:'sah', borderRadius:2 },
+      { label:'Engleski', data:hours(e=>e.cat==='engleski'), backgroundColor:COLORS.engleski, stack:'en', borderRadius:2 }
+    ]},
+    options:{ ...common, scales:{
+      x:xScale,
+      y:{ stacked:true, beginAtZero:true, grid:{ color:'#e6e3d8' }, ticks:{ ...tick, callback:v=>String(v).replace('.',',')+' h' } }
+    }}
+  });
+
+  if(gamesChartInstance) gamesChartInstance.destroy();
+  gamesChartInstance = new Chart(document.getElementById('gamesChart'), {
+    type:'bar',
+    data:{ labels, datasets:['daily','rapid','blitz'].map(f=>({ label:FORMAT_LABELS[f], data:games(f), backgroundColor:COLORS[f], borderRadius:2 })) },
+    options:{ ...common, scales:{
+      x:xScale,
+      y:{ stacked:true, beginAtZero:true, grid:{ color:'#e6e3d8' }, ticks:{ ...tick, precision:0 } }
+    }}
+  });
+}
+
+/* ============ IZVOZ / UVOZ ============ */
+function downloadBlob(content, filename, type){
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportJson').addEventListener('click', ()=>{
+  downloadBlob(JSON.stringify(state, null, 2), `sah-engleski-backup-${todayStr()}.json`, 'application/json');
+  showToast('JSON izvezen.');
+});
+
+document.getElementById('exportCsv').addEventListener('click', ()=>{
+  const rows = [['Datum','Kategorija','Vrsta','Format','Broj partija','Minuta','Napomena']];
+  [...state.entries].sort((a,b)=>a.date.localeCompare(b.date) || (a.ts||0)-(b.ts||0)).forEach(e=>{
+    rows.push([e.date, e.cat === 'sah' ? 'Sah' : 'Engleski', e.type === 'partija' ? 'Partija' : e.type === 'ucenje' ? 'Ucenje' : 'Razgovor',
+      e.format ? FORMAT_LABELS[e.format] : '', e.type === 'partija' ? e.games : '', e.minutes, e.note || '']);
+  });
+  const csv = rows.map(r => r.map(cell => {
+    const s = String(cell).replace(/"/g,'""');
+    return /[",\n]/.test(s) ? `"${s}"` : s;
+  }).join(',')).join('\n');
+  downloadBlob('﻿'+csv, `sah-engleski-${todayStr()}.csv`, 'text/csv;charset=utf-8');
+  showToast('CSV izvezen.');
+});
+
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!Array.isArray(parsed.entries)){ showToast('Datoteka ne izgleda kao valjan backup.'); return; }
+      state = normalize(parsed);
+      saveData();
+      fillSettings(); suggestGameMin();
+      renderAfterChange();
+      showToast('Backup uspješno uvezen.');
+    }catch(err){
+      showToast('Greška pri čitanju datoteke.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+document.getElementById('clearAll').addEventListener('click', ()=>{
+  if(!confirm('Sigurno želiš trajno obrisati sve podatke iz ovog preglednika? Ova radnja se ne može poništiti.')) return;
+  state = emptyState();
+  saveData();
+  selectedDate = null;
+  document.getElementById('dayReceipt').style.display = 'none';
+  fillSettings(); suggestGameMin();
+  renderAfterChange();
+  showToast('Svi podaci su obrisani.');
+});
+
+/* ============ INIT ============ */
+document.getElementById('appVersion').textContent = `Verzija ${APP_VERSION}`;
+fillSettings();
+suggestGameMin();
+renderAfterChange();
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW registracija nije uspjela', e));
+}
+</script>
+</body>
+</html>

@@ -1,7 +1,13 @@
-const CACHE = 'dnevnik-v1';
+// Povećaj broj kod svake izmjene bilo koje datoteke s popisa (vidi CLAUDE.md).
+const CACHE = 'dnevnik-v3';
 const ASSETS = [
   './dnevnik-prehrane-i-tezine.html',
   './manifest.json',
+  './dnevnik-sah-i-engleski.html',
+  './manifest-sah-engleski.json',
+  './icons/sah-apple-touch-icon.png',
+  './icons/sah-192.png',
+  './icons/sah-512.png',
   './vendor/chart.umd.min.js',
   './vendor/fonts.css',
   ...Array.from({ length: 10 }, (_, i) => `./vendor/fonts/f${String(i).padStart(2, '0')}.woff2`),
