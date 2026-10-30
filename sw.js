@@ -1,5 +1,5 @@
 // Povećaj broj kod svake izmjene bilo koje datoteke s popisa (vidi CLAUDE.md).
-const CACHE = 'dnevnik-v3';
+const CACHE = 'dnevnik-v4';
 const ASSETS = [
   './dnevnik-prehrane-i-tezine.html',
   './manifest.json',

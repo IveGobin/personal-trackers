@@ -705,7 +705,7 @@
 
 <script>
 /* Verzija aplikacije: povećaj kod svake izmjene (vidi CLAUDE.md). */
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 document.getElementById('appVersion').textContent = `Verzija ${APP_VERSION}`;
 
 /* ============ DATA LAYER ============ */
@@ -1668,20 +1668,25 @@ function renderJar(){
     <div class="stat-card"><div class="label">Višak (volumen)</div><div class="value">${jarNum(excessL,1)} L</div></div>
   `;
 
-  const nPacks = excessKg * 4;
-  const useKg = nPacks > 160;
+  // Broj blokova prati početni višak (prva težina − cilj) pa ostaje isti;
+  // istopljeni blokovi ostaju kao prazni obrubi, a obojani su samo oni koji su još preostali.
+  const useKg = totalExcessKg * 4 > 160;
   const unitKg = useKg ? 1 : 0.25;
-  const n = excessKg / unitKg;
-  const cnt = Math.ceil(n - 0.0001);
+  const total = totalExcessKg / unitKg;
+  const n = Math.min(excessKg / unitKg, total);
+  const cnt = Math.ceil(total - 0.0001);
   let blocks = '';
   for(let i = 0; i < cnt; i++){
-    const part = Math.min(1, n - i);
-    blocks += `<div style="width:18px;height:12px;border-radius:2px;border:1px solid #b8932c;background:linear-gradient(90deg,#f5d66b ${part*100}%,transparent ${part*100}%);"></div>`;
+    const part = Math.max(0, Math.min(1, n - i));
+    const border = part > 0 ? '#b8932c' : '#d9cba0';
+    blocks += `<div style="width:18px;height:12px;border-radius:2px;border:1px solid ${border};background:linear-gradient(90deg,#f5d66b ${part*100}%,transparent ${part*100}%);"></div>`;
   }
   document.getElementById('jarBlocks').innerHTML = blocks;
-  document.getElementById('jarBlocksCap').textContent = cnt
-    ? (useKg ? `Svaki blok je 1 kg viška (ukupno ${jarNum(excessKg,1)} kg).` : `Svaki blok je pakiranje maslaca od 250 g (ukupno ${jarNum(nPacks,1)} pakiranja).`)
-    : 'Nema viška iznad cilja.';
+  const unitText = useKg ? 'Svaki blok je 1 kg viška' : 'Svaki blok je pakiranje maslaca od 250 g';
+  const fmtUnits = v => jarNum(v, 1);
+  document.getElementById('jarBlocksCap').textContent = excessKg > 0
+    ? `${unitText}: preostalo ${fmtUnits(n)} od ${fmtUnits(total)}, istopljeno ${fmtUnits(total - n)}.`
+    : `${unitText}: svih ${fmtUnits(total)} je istopljeno, cilj je postignut.`;
 }
 
 (function jarLoop(){
