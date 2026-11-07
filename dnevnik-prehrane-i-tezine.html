@@ -279,6 +279,10 @@
   .chart-controls button.active{background:var(--ink);color:#fff;}
   canvas{max-height:280px;}
 
+  /* Koraci */
+  .steps-block{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line-strong);}
+  .steps-preview{margin:8px 0 0;font-size:13px;color:var(--ink-soft);}
+
   /* Export */
   .export-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
   .danger-zone{
@@ -492,6 +496,17 @@
             </div>
           </div>
           <div style="margin-top:12px;"><button class="btn toast-btn" id="addAct">Dodaj aktivnost</button></div>
+
+          <div class="steps-block">
+            <div class="field-row">
+              <div class="field">
+                <label for="actSteps">Dnevni broj koraka</label>
+                <input type="number" id="actSteps" min="0" step="1" inputmode="numeric" placeholder="npr. 8000">
+              </div>
+            </div>
+            <p class="steps-preview" id="stepsPreview">Kalorije se računaju iz koraka, visine i zadnje težine (umjeren hod). Koristi se gornji datum.</p>
+            <div style="margin-top:10px;"><button class="btn toast-btn" id="addSteps">Spremi korake</button></div>
+          </div>
         </fieldset>
 
         <fieldset class="form-card">
@@ -580,6 +595,13 @@
           </div>
         </div>
         <canvas id="dailyChart"></canvas>
+      </div>
+
+      <div class="chart-box">
+        <h3>Dnevni koraci</h3>
+        <p id="stepsMsg" style="display:none;color:var(--ink-soft);font-size:13px;margin:0 0 6px;"></p>
+        <canvas id="stepsChart"></canvas>
+        <p id="stepsCaption" style="margin:12px 0 0;font-size:13px;color:var(--ink-soft);text-align:center;"></p>
       </div>
     </section>
 
@@ -705,7 +727,7 @@
 
 <script>
 /* Verzija aplikacije: povećaj kod svake izmjene (vidi CLAUDE.md). */
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 document.getElementById('appVersion').textContent = `Verzija ${APP_VERSION}`;
 
 /* ============ DATA LAYER ============ */
@@ -864,6 +886,64 @@ document.getElementById('addAct').addEventListener('click', ()=>{
   document.getElementById('actKcal').value = '';
   renderToday(); renderCalendar();
   showToast('Aktivnost dodana.');
+});
+
+/* ---------- Koraci -> kalorije ----------
+   Duljina koraka ≈ 0,415 × visina. Umjeren hod (~5 km/h) je ~3,5 MET; računa se samo
+   potrošnja iznad mirovanja (3,5 − 1 = 2,5 MET), jer je mirovanje već u dnevnom cilju.
+   2,5 kcal/kg/h ÷ 5 km/h = 0,5 kcal po kg tjelesne težine po prijeđenom km. */
+const STEP_KCAL_PER_KG_KM = 0.5;
+const DEFAULT_STRIDE_M = 0.72;
+
+function weightForDate(dateIso){
+  const sortedW = [...state.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!sortedW.length) return null;
+  let last = null;
+  for(const w of sortedW){ if(w.date <= dateIso) last = w.kg; else break; }
+  return last ?? sortedW[0].kg; // prije prvog vaganja koristi prvu poznatu težinu
+}
+
+function estimateStepsKcal(steps, dateIso){
+  const kg = weightForDate(dateIso);
+  if(!kg) return null;
+  const height = state.settings.height;
+  const strideM = height ? height/100*0.415 : DEFAULT_STRIDE_M;
+  const km = steps * strideM / 1000;
+  return { kcal: Math.round(STEP_KCAL_PER_KG_KM * kg * km), km, kg, hasHeight: !!height };
+}
+
+function updateStepsPreview(){
+  const el = document.getElementById('stepsPreview');
+  const steps = parseInt(document.getElementById('actSteps').value);
+  const date = document.getElementById('actDate').value || todayStr();
+  if(!steps || steps <= 0){
+    el.textContent = 'Kalorije se računaju iz koraka, visine i zadnje težine (umjeren hod). Koristi se gornji datum.';
+    return;
+  }
+  const est = estimateStepsKcal(steps, date);
+  if(!est){ el.textContent = 'Za izračun prvo unesi barem jednu težinu.'; return; }
+  el.textContent = `≈ ${est.kcal} kcal · ${est.km.toFixed(1).replace('.',',')} km · ${est.kg} kg` +
+    (est.hasHeight ? '' : ' (visina nije postavljena, uzet je prosječan korak)');
+}
+document.getElementById('actSteps').addEventListener('input', updateStepsPreview);
+document.getElementById('actDate').addEventListener('change', updateStepsPreview);
+
+document.getElementById('addSteps').addEventListener('click', ()=>{
+  const steps = parseInt(document.getElementById('actSteps').value);
+  const date = document.getElementById('actDate').value || todayStr();
+  if(!steps || steps <= 0){ showToast('Unesi valjan broj koraka.'); return; }
+  const est = estimateStepsKcal(steps, date);
+  if(!est){ showToast('Za izračun kalorija prvo unesi barem jednu težinu.'); return; }
+  const name = `Hodanje (${steps.toLocaleString('hr-HR')} koraka)`;
+  // Jedan unos koraka po danu: novi broj zamjenjuje stari.
+  const existing = state.activities.find(a=>a.date===date && a.steps);
+  if(existing){ existing.steps = steps; existing.kcal = est.kcal; existing.name = name; }
+  else { state.activities.push({ id: uid(), date, name, kcal: est.kcal, steps }); }
+  saveData();
+  document.getElementById('actSteps').value = '';
+  updateStepsPreview();
+  renderToday(); renderCalendar();
+  showToast(existing ? `Koraci ažurirani (≈ ${est.kcal} kcal).` : `Koraci spremljeni (≈ ${est.kcal} kcal).`);
 });
 
 document.getElementById('addWeight').addEventListener('click', ()=>{
@@ -1161,6 +1241,7 @@ document.getElementById('rangeButtons').addEventListener('click', (e)=>{
   btn.classList.add('active');
   currentRange = btn.dataset.range === 'all' ? 'all' : parseInt(btn.dataset.range);
   renderDailyChart();
+  renderStepsChart();
 });
 
 function lastNDates(n){
@@ -1191,6 +1272,7 @@ function renderCharts(){
   }
   renderTrendChart();
   renderDailyChart();
+  renderStepsChart();
 }
 
 /* ---------- Graf 1: Trend napretka i cilj ---------- */
@@ -1361,9 +1443,8 @@ window.addEventListener('resize', ()=>{
   }, 250);
 });
 
-/* ---------- Graf 2: Dnevna analiza kalorije vs. težina ---------- */
-function renderDailyChart(){
-  const canvasEl = document.getElementById('dailyChart');
+/* Raspon datuma za dnevne grafove (prema odabranom 7 d / 30 d / 3 mj / Sve). */
+function chartDateRange(){
   let dateRange;
   if(currentRange === 'all'){
     const allDates = new Set([...state.meals.map(m=>m.date), ...state.activities.map(a=>a.date), ...state.weights.map(w=>w.date)]);
@@ -1381,6 +1462,62 @@ function renderDailyChart(){
   } else {
     dateRange = lastNDates(currentRange);
   }
+
+  return dateRange;
+}
+
+/* ---------- Graf 3: Dnevni koraci ---------- */
+let stepsChartInstance = null;
+function renderStepsChart(){
+  const canvasEl = document.getElementById('stepsChart');
+  const msgEl = document.getElementById('stepsMsg');
+  const captionEl = document.getElementById('stepsCaption');
+  if(!state.activities.some(a=>a.steps)){
+    canvasEl.style.display = 'none';
+    captionEl.textContent = '';
+    msgEl.style.display = 'block';
+    msgEl.textContent = 'Unesi dnevni broj koraka (tab Unos → Fizička aktivnost) da bi se ovdje pojavio graf.';
+    if(stepsChartInstance){ stepsChartInstance.destroy(); stepsChartInstance = null; }
+    return;
+  }
+  canvasEl.style.display = 'block';
+  msgEl.style.display = 'none';
+
+  const dateRange = chartDateRange();
+  const stepActs = dateRange.map(d => state.activities.filter(a=>a.date===d && a.steps));
+  const stepsData = stepActs.map(list => list.reduce((s,a)=>s+a.steps,0) || null);
+  const labels = dateRange.map(fmtAxisDate);
+
+  if(stepsChartInstance) stepsChartInstance.destroy();
+  stepsChartInstance = new Chart(canvasEl, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Koraci', data:stepsData, backgroundColor:'#f0b27a', borderRadius:2 }] },
+    options:{
+      responsive:true,
+      events:[],
+      plugins:{ legend:{ display:false }, tooltip:{ enabled:false } },
+      scales:{
+        y:{ beginAtZero:true, ticks:{ font:{ family:'IBM Plex Mono' } }, grid:{ color:'#eae7da' } },
+        x:{ ticks:{ font:{ family:'IBM Plex Mono' } }, grid:{ display:false } }
+      }
+    }
+  });
+
+  const logged = stepActs.filter(list=>list.length);
+  if(logged.length){
+    const totalSteps = logged.reduce((s,list)=>s+list.reduce((t,a)=>t+a.steps,0),0);
+    const totalKcal = logged.reduce((s,list)=>s+list.reduce((t,a)=>t+a.kcal,0),0);
+    const avgSteps = Math.round(totalSteps/logged.length);
+    captionEl.textContent = `Prosjek: ${avgSteps.toLocaleString('hr-HR')} koraka/dan (${logged.length} ${logged.length===1?'dan':'dana'} s unosom) · ukupno ≈ ${totalKcal} kcal.`;
+  } else {
+    captionEl.textContent = 'Nema unesenih koraka u odabranom razdoblju.';
+  }
+}
+
+/* ---------- Graf 2: Dnevna analiza kalorije vs. težina ---------- */
+function renderDailyChart(){
+  const canvasEl = document.getElementById('dailyChart');
+  const dateRange = chartDateRange();
 
   const kcalInData = dateRange.map(d => state.meals.filter(m=>m.date===d).reduce((s,m)=>s+m.kcal,0));
   const kcalOutData = dateRange.map(d => state.activities.filter(a=>a.date===d).reduce((s,a)=>s+a.kcal,0));
@@ -1450,7 +1587,10 @@ document.getElementById('exportJson').addEventListener('click', ()=>{
 document.getElementById('exportCsv').addEventListener('click', ()=>{
   const rows = [['Datum','Vrsta','Kategorija','Vrijednost','Jedinica','Napomena']];
   state.meals.forEach(m=>rows.push([m.date,'Obrok',MEAL_LABELS[m.type],m.kcal,'kcal',m.note||'']));
-  state.activities.forEach(a=>rows.push([a.date,'Aktivnost',a.name,a.kcal,'kcal','']));
+  state.activities.forEach(a=>{
+    rows.push([a.date,'Aktivnost',a.name,a.kcal,'kcal','']);
+    if(a.steps) rows.push([a.date,'Koraci','Dnevni koraci',a.steps,'koraci',`≈ ${a.kcal} kcal`]);
+  });
   state.weights.forEach(w=>rows.push([w.date,'Tezina','Tjelesna tezina',w.kg,'kg','']));
   rows.sort((a,b)=> a[0]===b[0] ? 0 : (a[0] < b[0] ? -1 : 1));
   const csv = rows.map(r => r.map(cell => {
