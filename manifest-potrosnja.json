@@ -1,0 +1,15 @@
+{
+  "id": "./dnevnik-potrosnje.html",
+  "name": "Dnevnik · potrošnja",
+  "short_name": "Potrošnja",
+  "lang": "hr",
+  "start_url": "./dnevnik-potrosnje.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ECEFEA",
+  "theme_color": "#1d4d47",
+  "icons": [
+    { "src": "icons/novac-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/novac-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

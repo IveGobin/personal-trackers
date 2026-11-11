@@ -8,6 +8,7 @@ Osobni dnevnici kao samostalne HTML stranice (PWA, rade offline, podaci samo u `
 |---|---|---|---|
 | Prehrana & težina | `dnevnik-prehrane-i-tezine.html` | `manifest.json` | `wt_diary_v1` |
 | Šah & engleski | `dnevnik-sah-i-engleski.html` | `manifest-sah-engleski.json` | `chess_english_v1` |
+| Potrošnja | `dnevnik-potrosnje.html` | `manifest-potrosnja.json` | `money_diary_v1` |
 
 `index.html` je samo početna stranica s poveznicama na aplikacije. `sw.js` je zajednički service worker za sve aplikacije. `dnevnik.html` je stari, nepovezani prototip.
 
