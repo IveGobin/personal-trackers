@@ -540,7 +540,7 @@
 
 <script>
 /* Verzija aplikacije: povećaj kod svake izmjene (vidi CLAUDE.md). */
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 document.getElementById('appVersion').textContent = `Verzija ${APP_VERSION}`;
 
 /* ============ KATEGORIJE ============ */
@@ -556,7 +556,7 @@ const EXP_CATS = [
   { id:'pokloni',    icon:'🎁', label:'Pokloni',             short:'Pokloni' },
   { id:'putovanja',  icon:'✈️', label:'Putovanja',           short:'Putovanja' },
   { id:'edukacija',  icon:'📚', label:'Edukacija',           short:'Edukacija' },
-  { id:'ljubimci',   icon:'🐾', label:'Ljubimci',            short:'Ljubimci' },
+  { id:'ulaganja',   icon:'📈', label:'Ulaganja',            short:'Ulaganja' },
   { id:'kucanstvo',  icon:'🔧', label:'Kućanstvo i popravci',short:'Kućanstvo' },
   { id:'ostalo',     icon:'❓', label:'Ostalo',              short:'Ostalo' }
 ];
@@ -567,7 +567,11 @@ const INC_CATS = [
   { id:'dar',        icon:'🎁', label:'Poklon / dar',        short:'Dar' },
   { id:'ostalo-p',   icon:'➕', label:'Ostali prihodi',      short:'Ostalo' }
 ];
-const CAT_BY_ID = Object.fromEntries([...EXP_CATS, ...INC_CATS].map(c=>[c.id,c]));
+// Ukinute kategorije: više se ne nude kod unosa, ali stari unosi i dalje imaju ispravan naziv
+const RETIRED_CATS = [
+  { id:'ljubimci',   icon:'🐾', label:'Ljubimci',            short:'Ljubimci' }
+];
+const CAT_BY_ID = Object.fromEntries([...EXP_CATS, ...INC_CATS, ...RETIRED_CATS].map(c=>[c.id,c]));
 function catOf(e){
   return CAT_BY_ID[e.cat] || (e.kind === 'prihod' ? CAT_BY_ID['ostalo-p'] : CAT_BY_ID['ostalo']);
 }
